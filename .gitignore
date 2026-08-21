@@ -1,0 +1,24 @@
+# Java / Maven
+target/
+*.class
+
+# Node / frontend dependencies
+node_modules/
+dist/
+build/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs and local environment files
+*.log
+.env
+.env.*
+
+# Temporary files
+tmp/
+temp/

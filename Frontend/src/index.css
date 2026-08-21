@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #FFFFFF;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #FFFFFF;
+  color: #334155;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  outline-offset: 2px;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.35);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+@media (max-width: 767px) {
+  .mobile-card-table,
+  .mobile-card-table tbody {
+    display: block;
+  }
+
+  .mobile-card-table thead {
+    display: none;
+  }
+
+  .mobile-card-table tbody {
+    padding: 0.75rem;
+  }
+
+  .mobile-card-table tbody tr {
+    display: block;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 1px solid rgb(51 65 85 / 15%);
+    border-radius: 0.75rem;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+  }
+
+  .mobile-card-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .mobile-card-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 40%) minmax(0, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    border-bottom: 1px solid rgb(51 65 85 / 10%);
+    white-space: normal;
+  }
+
+  .mobile-card-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-card-table tbody td::before {
+    color: rgb(51 65 85 / 70%);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .appointment-history-table td:nth-child(1)::before { content: 'Date/Time'; }
+  .appointment-history-table td:nth-child(2)::before { content: 'Patient'; }
+  .appointment-history-table td:nth-child(3)::before { content: 'Type'; }
+  .appointment-history-table td:nth-child(4)::before { content: 'Location'; }
+  .appointment-history-table td:nth-child(5)::before { content: 'Status'; }
+  .appointment-history-table td:nth-child(6)::before { content: 'Actions'; }
+
+  .appointment-list-table td:nth-child(1)::before { content: 'Appointment'; }
+  .appointment-list-table td:nth-child(2)::before { content: 'Patient'; }
+  .appointment-list-table td:nth-child(3)::before { content: 'Location'; }
+  .appointment-list-table td:nth-child(4)::before { content: 'Reminder'; }
+  .appointment-list-table td:nth-child(5)::before { content: 'Status'; }
+  .appointment-list-table td:nth-child(6)::before { content: 'Actions'; }
+
+  .monitoring-table td:nth-child(1)::before { content: 'Date'; }
+  .monitoring-table td:nth-child(2)::before { content: 'Value'; }
+  .monitoring-table td:nth-child(3)::before { content: 'Status'; }
+  .monitoring-table td:nth-child(4)::before { content: 'Notes'; }
+  .monitoring-table td:nth-child(5)::before { content: 'Actions'; }
+
+  .risk-history-table td:nth-child(1)::before { content: 'Date/Time'; }
+  .risk-history-table td:nth-child(2)::before { content: 'Patient'; }
+  .risk-history-table td:nth-child(3)::before { content: 'Risk Level'; }
+  .risk-history-table td:nth-child(4)::before { content: 'Type'; }
+  .risk-history-table td:nth-child(5)::before { content: 'Glucose'; }
+  .risk-history-table td:nth-child(6)::before { content: 'Review'; }
+  .risk-history-table td:nth-child(7)::before { content: 'Actions'; }
+
+  .medication-table td:nth-child(1)::before { content: 'Medication'; }
+  .medication-table td:nth-child(2)::before { content: 'Patient'; }
+  .medication-table td:nth-child(3)::before { content: 'Dose'; }
+  .medication-table td:nth-child(4)::before { content: 'Schedule'; }
+  .medication-table td:nth-child(5)::before { content: 'Adherence'; }
+  .medication-table td:nth-child(6)::before { content: 'Status'; }
+  .medication-table td:nth-child(7)::before { content: 'Alert'; }
+  .medication-table td:nth-child(8)::before { content: 'Actions'; }
+}
