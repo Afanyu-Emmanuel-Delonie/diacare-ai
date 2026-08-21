@@ -48,13 +48,13 @@ import MedicationDetails from '../pages/shared/medications/MedicationDetails.jsx
 import MedicationList from '../pages/shared/medications/MedicationList.jsx';
 import MedicationSchedule from '../pages/shared/medications/MedicationSchedule.jsx';
 import MedicationAdherence from '../pages/shared/medications/MedicationAdherence.jsx';
-import MissedMedicationAlerts from '../pages/shared/medications/MissedMedicationAlerts.jsx';
 import ChatWindow from '../pages/shared/messages/ChatWindow.jsx';
 import MessageDetails from '../pages/shared/messages/MessageDetails.jsx';
 import MessageList from '../pages/shared/messages/MessageList.jsx';
 import SendMessage from '../pages/shared/messages/SendMessage.jsx';
 import KnowledgeArticlePage from '../pages/shared/knowledge-base/KnowledgeArticlePage.jsx';
 import LocalFoodsPage from '../pages/shared/knowledge-base/LocalFoodsPage.jsx';
+import ReportsPage from '../pages/shared/reports/ReportsPage.jsx';
 import ClinicalPatientReportPage from '../pages/shared/reports/ClinicalPatientReportPage.jsx';
 import PatientHealthReport from '../pages/shared/reports/PatientHealthReport.jsx';
 import ReportDownloadPage from '../pages/shared/reports/ReportDownloadPage.jsx';
@@ -174,26 +174,20 @@ function AppRoutes() {
           }
         />
         <Route
-          path="reports/admin/system"
+          path="reports"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
-              <AdminSystemReports />
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
+              <ReportsPage />
             </RoleBasedRoute>
           }
         />
-        <Route
-          path="reports/admin/audit"
-          element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
-              <SecurityAuditReports />
-            </RoleBasedRoute>
-          }
-        />
+        <Route path="reports/admin/system" element={<Navigate to="/dashboard/reports" replace />} />
+        <Route path="reports/admin/audit" element={<Navigate to="/dashboard/reports" replace />} />
         <Route
           path="reports/doctor/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.DOCTOR]}>
-              <ClinicalPatientReportPage audience="doctor" />
+              <ReportsPage />
             </RoleBasedRoute>
           }
         />
@@ -201,7 +195,7 @@ function AppRoutes() {
           path="reports/nurse/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.NURSE]}>
-              <ClinicalPatientReportPage audience="nurse" />
+              <ReportsPage />
             </RoleBasedRoute>
           }
         />
@@ -209,34 +203,13 @@ function AppRoutes() {
           path="reports/caregiver/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.CAREGIVER]}>
-              <ClinicalPatientReportPage audience="caregiver" />
+              <ReportsPage />
             </RoleBasedRoute>
           }
         />
-        <Route
-          path="reports/patient/my-report"
-          element={
-            <RoleBasedRoute allowedRoles={[ROLES.PATIENT]}>
-              <PatientHealthReport />
-            </RoleBasedRoute>
-          }
-        />
-        <Route
-          path="reports/history"
-          element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
-              <ReportHistoryPage />
-            </RoleBasedRoute>
-          }
-        />
-        <Route
-          path="reports/download"
-          element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
-              <ReportDownloadPage />
-            </RoleBasedRoute>
-          }
-        />
+        <Route path="reports/patient/my-report" element={<Navigate to="/dashboard/reports" replace />} />
+        <Route path="reports/history" element={<Navigate to="/dashboard/reports" replace />} />
+        <Route path="reports/download" element={<Navigate to="/dashboard/reports" replace />} />
         <Route
           path="patients"
           element={
@@ -384,19 +357,12 @@ function AppRoutes() {
         <Route
           path="medications/adherence"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <MedicationAdherence />
             </RoleBasedRoute>
           }
         />
-        <Route
-          path="medications/missed-alerts"
-          element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
-              <MissedMedicationAlerts />
-            </RoleBasedRoute>
-          }
-        />
+        <Route path="medications/missed-alerts" element={<Navigate to="/dashboard/medications/adherence" replace />} />
         <Route
           path="medications/:id"
           element={

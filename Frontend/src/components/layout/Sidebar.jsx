@@ -65,10 +65,8 @@ function buildNav(role) {
     {
       label: 'Medical Records',
       icon: MdFolderOpen,
-      children: [
-        { label: 'Records', path: '/dashboard/medical-records' },
-        { label: 'History', path: '/dashboard/medical-records/history' },
-      ],
+      path: '/dashboard/medical-records',
+      single: true,
     },
     {
       label: 'Appointments',
@@ -79,12 +77,8 @@ function buildNav(role) {
     {
       label: 'Medications',
       icon: MdMedication,
-      children: [
-        { label: 'All Medications', path: '/dashboard/medications' },
-        { label: 'Schedule',        path: '/dashboard/medications/schedule' },
-        { label: 'Adherence',       path: '/dashboard/medications/adherence' },
-        { label: 'Missed Alerts',   path: '/dashboard/medications/missed-alerts' },
-      ],
+      path: '/dashboard/medications',
+      single: true,
     },
     {
       label: 'Health Monitoring',
@@ -97,21 +91,14 @@ function buildNav(role) {
     {
       label: 'AI Risk',
       icon: MdPsychology,
-      children: [
-        { label: 'Risk Prediction',   path: '/dashboard/ai-risk' },
-        { label: 'Patient Summary',   path: '/dashboard/ai-risk/patient-summary' },
-        { label: 'History',           path: '/dashboard/ai-risk/history' },
-        { label: 'Abnormal Alerts',   path: '/dashboard/ai-risk/abnormal-alerts' },
-        { label: 'Emergency View',    path: '/dashboard/ai-risk/emergency' },
-      ],
+      path: '/dashboard/ai-risk',
+      single: true,
     },
     {
       label: 'Reports',
       icon: MdBarChart,
-      children: [
-        { label: 'History',   path: '/dashboard/reports/history' },
-        { label: 'Downloads', path: '/dashboard/reports/download' },
-      ],
+      path: '/dashboard/reports',
+      single: true,
     },
     {
       label: 'Knowledge Base',
@@ -132,13 +119,10 @@ function buildNav(role) {
         single: true,
       },
       {
-        label: 'Audit & Security',
+        label: 'Audit Logs',
         icon: MdSecurity,
-        children: [
-          { label: 'Audit Logs',        path: '/dashboard/admin/audit-logs' },
-          { label: 'System Reports',    path: '/dashboard/reports/admin/system' },
-          { label: 'Security Reports',  path: '/dashboard/reports/admin/audit' },
-        ],
+        path: '/dashboard/admin/audit-logs',
+        single: true,
       },
       {
         label: 'Settings',

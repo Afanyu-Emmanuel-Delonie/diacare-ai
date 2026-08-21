@@ -1,25 +1,18 @@
-package auca.ac.rw.diabetesmonitoring.model;
+package auca.ac.rw.diabetesmonitoring.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "medications")
-public class Medication {
+public class MedicationRequestDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @NotNull(message = "Patient is required")
+    private Long patientId;
 
-    @NotBlank
+    @NotBlank(message = "Medication name is required")
     @Size(max = 120)
-    @Column(nullable = false)
     private String medicationName;
 
     @Size(max = 120)
@@ -49,6 +42,7 @@ public class Medication {
     @Size(max = 500)
     private String warnings;
 
+    @NotBlank(message = "Doctor prescribed dose is required")
     @Size(max = 200)
     private String doctorPrescribedDose;
 
@@ -58,19 +52,13 @@ public class Medication {
     @Size(max = 50)
     private String adherenceStatus;
 
-    @NotNull
+    @NotNull(message = "Start date is required")
     private LocalDate startDate;
 
     private LocalDate endDate;
 
-    private LocalDateTime lastAdherenceUpdatedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
-    @JsonIgnore
-    private Patient patient;
-
-    public Long getId() { return id; }
+    public Long getPatientId() { return patientId; }
+    public void setPatientId(Long patientId) { this.patientId = patientId; }
     public String getMedicationName() { return medicationName; }
     public void setMedicationName(String medicationName) { this.medicationName = medicationName; }
     public String getMedicationClass() { return medicationClass; }
@@ -101,8 +89,4 @@ public class Medication {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
-    public LocalDateTime getLastAdherenceUpdatedAt() { return lastAdherenceUpdatedAt; }
-    public void setLastAdherenceUpdatedAt(LocalDateTime lastAdherenceUpdatedAt) { this.lastAdherenceUpdatedAt = lastAdherenceUpdatedAt; }
-    public Patient getPatient() { return patient; }
-    public void setPatient(Patient patient) { this.patient = patient; }
 }

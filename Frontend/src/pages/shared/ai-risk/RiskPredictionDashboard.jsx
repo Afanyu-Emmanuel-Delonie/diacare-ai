@@ -121,6 +121,7 @@ function RiskPredictionDashboard() {
     setError('');
     try {
       const payload = {
+        patientId: form.patientId ? Number(form.patientId) : null,
         currentReading: Number(form.currentReading),
         measuredAt: form.measuredAt,
         recentReadings: parseRecentReadings(form.recentReadings),

@@ -146,6 +146,67 @@ public class ReportAnalyticsService {
         return report;
     }
 
+    public Map<String, Object> clinicalReport(Long patientId, String reportAudience) {
+        Patient patient = getPatient(patientId);
+        List<GlucoseReading> glucoseReadings = glucoseReadingRepository.findByPatientIdOrderByMeasuredAtAsc(patientId);
+        List<Medication> medications = medicationRepository.findByPatientIdOrderByStartDateAsc(patientId);
+        List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByScheduledAtDesc(patientId);
+        List<Alert> alerts = alertRepository.findByPatientIdOrderByCreatedAtDesc(patientId);
+
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("reportAudience", reportAudience);
+        report.put("generatedAt", LocalDateTime.now());
+        report.put("patientProfile", patientDetails(patient));
+
+        Map<String, Object> sections = new LinkedHashMap<>();
+        sections.put("healthSummary", section("Health Summary", List.of(
+                item(LocalDateTime.now(), Map.of(
+                        "age", String.valueOf(age(patient.getDateOfBirth())),
+                        "averageGlucoseMgDl", String.valueOf(average(glucoseReadings)),
+                        "glucoseTrend", glucoseTrend(glucoseReadings),
+                        "activeMedications", String.valueOf(activeMedicationCount(medications, LocalDate.now())),
+                        "totalAppointments", String.valueOf(appointments.size()),
+                        "riskAlertCount", String.valueOf(alerts.size())
+                ))
+        )));
+        sections.put("glucoseTrend", section("Glucose Trend", glucoseReadings.stream()
+                .map(r -> item(r.getMeasuredAt(), Map.of("readingMgDl", String.valueOf(r.getReading()))))
+                .toList()));
+        sections.put("medicationAdherence", section("Medication Adherence", medications.stream()
+                .map(m -> item(m.getStartDate() == null ? null : m.getStartDate().atStartOfDay(), Map.of(
+                        "medicationName", String.valueOf(m.getMedicationName()),
+                        "adherenceStatus", String.valueOf(m.getAdherenceStatus()),
+                        "doctorPrescribedDose", String.valueOf(m.getDoctorPrescribedDose())
+                )))
+                .toList()));
+        sections.put("appointmentHistory", section("Appointment History", appointments.stream()
+                .map(a -> item(a.getScheduledAt(), Map.of("status", String.valueOf(a.getStatus()))))
+                .toList()));
+        sections.put("riskAlerts", section("Risk Alerts", alerts.stream()
+                .map(a -> item(a.getCreatedAt(), Map.of("title", String.valueOf(a.getTitle()), "message", String.valueOf(a.getMessage()))))
+                .toList()));
+
+        report.put("sections", sections);
+        return report;
+    }
+
+    private Map<String, Object> section(String sectionName, List<Map<String, Object>> items) {
+        Map<String, Object> section = new LinkedHashMap<>();
+        section.put("sectionName", sectionName);
+        if (items.isEmpty()) {
+            section.put("message", "No data available for this section.");
+        }
+        section.put("items", items);
+        return section;
+    }
+
+    private Map<String, Object> item(LocalDateTime dateTime, Map<String, Object> details) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("dateTime", dateTime);
+        item.put("details", details);
+        return item;
+    }
+
     private Patient getPatient(Long patientId) {
         return patientRepository.findById(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));

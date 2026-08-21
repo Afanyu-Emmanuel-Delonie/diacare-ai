@@ -65,6 +65,12 @@ public class ReportController {
         return ResponseEntity.ok(reportAnalyticsService.riskAlertHistory(patientId));
     }
 
+    @GetMapping("/patient/{patientId}/clinical")
+    public ResponseEntity<Map<String, Object>> getClinicalReport(@PathVariable Long patientId,
+                                                                  @RequestParam(required = false, defaultValue = "Health Report") String audience) {
+        return ResponseEntity.ok(reportAnalyticsService.clinicalReport(patientId, audience));
+    }
+
     @GetMapping("/patient/{patientId}/monthly-progress")
     public ResponseEntity<Map<String, Object>> getMonthlyPatientProgressReport(
             @PathVariable Long patientId,

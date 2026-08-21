@@ -7,6 +7,7 @@ import auca.ac.rw.diabetesmonitoring.repository.PatientRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PatientService {
@@ -56,6 +57,10 @@ public class PatientService {
 
     public List<Patient> getAll() {
         return patientRepository.findAll();
+    }
+
+    public Optional<Patient> findByEmail(String email) {
+        return patientRepository.findByEmail(email);
     }
 
     public Patient getById(Long id) {

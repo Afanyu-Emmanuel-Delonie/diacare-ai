@@ -41,6 +41,17 @@ public class PatientController {
         );
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<PatientResponseDto> getCurrentPatient(Authentication authentication) {
+        User currentUser = resolveUser(authentication);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return patientService.findByEmail(currentUser.getEmail())
+                .map(patient -> ResponseEntity.ok(PatientResponseDto.from(patient)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<PatientResponseDto> getPatientById(@PathVariable Long id, Authentication authentication) {
         Patient patient = patientService.getPatientById(id);

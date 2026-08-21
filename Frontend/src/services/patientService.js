@@ -4,6 +4,8 @@ export const getPatients = () => apiClient.get('/patients');
 
 export const getPatient = (id) => apiClient.get(`/patients/${id}`);
 
+export const getCurrentPatient = () => apiClient.get('/patients/me');
+
 export const createPatient = (payload) => apiClient.post('/patients', payload);
 
 export const updatePatient = (id, payload) => apiClient.put(`/patients/${id}`, payload);
