@@ -181,13 +181,27 @@ function AppRoutes() {
             </RoleBasedRoute>
           }
         />
-        <Route path="reports/admin/system" element={<Navigate to="/dashboard/reports" replace />} />
-        <Route path="reports/admin/audit" element={<Navigate to="/dashboard/reports" replace />} />
+        <Route
+          path="reports/admin/system"
+          element={
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
+              <AdminSystemReports />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="reports/admin/audit"
+          element={
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN]}>
+              <SecurityAuditReports />
+            </RoleBasedRoute>
+          }
+        />
         <Route
           path="reports/doctor/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.DOCTOR]}>
-              <ReportsPage />
+              <ClinicalPatientReportPage audience="doctor" />
             </RoleBasedRoute>
           }
         />
@@ -195,7 +209,7 @@ function AppRoutes() {
           path="reports/nurse/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.NURSE]}>
-              <ReportsPage />
+              <ClinicalPatientReportPage audience="nurse" />
             </RoleBasedRoute>
           }
         />
@@ -203,13 +217,34 @@ function AppRoutes() {
           path="reports/caregiver/patient"
           element={
             <RoleBasedRoute allowedRoles={[ROLES.CAREGIVER]}>
-              <ReportsPage />
+              <ClinicalPatientReportPage audience="caregiver" />
             </RoleBasedRoute>
           }
         />
-        <Route path="reports/patient/my-report" element={<Navigate to="/dashboard/reports" replace />} />
-        <Route path="reports/history" element={<Navigate to="/dashboard/reports" replace />} />
-        <Route path="reports/download" element={<Navigate to="/dashboard/reports" replace />} />
+        <Route
+          path="reports/patient/my-report"
+          element={
+            <RoleBasedRoute allowedRoles={[ROLES.PATIENT]}>
+              <PatientHealthReport />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="reports/history"
+          element={
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
+              <ReportHistoryPage />
+            </RoleBasedRoute>
+          }
+        />
+        <Route
+          path="reports/download"
+          element={
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
+              <ReportDownloadPage />
+            </RoleBasedRoute>
+          }
+        />
         <Route
           path="patients"
           element={
@@ -382,7 +417,7 @@ function AppRoutes() {
         <Route
           path="appointments"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <AppointmentList />
             </RoleBasedRoute>
           }
@@ -398,7 +433,7 @@ function AppRoutes() {
         <Route
           path="appointments/calendar"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <AppointmentCalendarPage />
             </RoleBasedRoute>
           }
@@ -406,7 +441,7 @@ function AppRoutes() {
         <Route
           path="appointments/upcoming"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <UpcomingAppointments />
             </RoleBasedRoute>
           }
@@ -414,7 +449,7 @@ function AppRoutes() {
         <Route
           path="appointments/history"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <AppointmentHistory />
             </RoleBasedRoute>
           }
@@ -422,7 +457,7 @@ function AppRoutes() {
         <Route
           path="appointments/:id"
           element={
-            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PATIENT]}>
+            <RoleBasedRoute allowedRoles={[ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.CAREGIVER, ROLES.PATIENT]}>
               <AppointmentDetails />
             </RoleBasedRoute>
           }

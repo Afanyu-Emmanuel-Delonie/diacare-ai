@@ -73,6 +73,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private void seedClinicalActivity(Patient patient, Doctor doctor) {
         backfillMedicalRecordDoctor(patient, doctor);
+        backfillAppointmentDetails(patient, doctor);
 
         if (!glucoseReadingRepository.findByPatientId(patient.getId()).isEmpty()) {
             return;
@@ -89,9 +90,14 @@ public class DemoDataSeeder implements CommandLineRunner {
         }
 
         Appointment appointment = new Appointment();
-        appointment.setScheduledAt(now.withHour(14).withMinute(30));
-        appointment.setStatus("SCHEDULED");
+        appointment.setScheduledAt(now.plusDays(3).withHour(14).withMinute(30));
+        appointment.setStatus("UPCOMING");
+        appointment.setAppointmentType("Diabetes follow-up");
+        appointment.setLocation("Kigali Diabetes Clinic, Room 4");
+        appointment.setReason("Routine follow-up to review glucose trends and medication adherence.");
+        appointment.setReminderAt(now.plusDays(3).withHour(13).withMinute(30));
         appointment.setPatient(patient);
+        appointment.setDoctor(doctor);
         appointmentRepository.save(appointment);
 
         Alert alert = new Alert();
@@ -120,6 +126,35 @@ public class DemoDataSeeder implements CommandLineRunner {
             if (record.getDoctor() == null) {
                 record.setDoctor(doctor);
                 medicalRecordRepository.save(record);
+            }
+        }
+    }
+
+    private void backfillAppointmentDetails(Patient patient, Doctor doctor) {
+        for (Appointment appointment : appointmentRepository.findByPatientId(patient.getId())) {
+            boolean changed = false;
+            if ("SCHEDULED".equals(appointment.getStatus())) {
+                appointment.setStatus("UPCOMING");
+                changed = true;
+            }
+            if (appointment.getDoctor() == null) {
+                appointment.setDoctor(doctor);
+                changed = true;
+            }
+            if (appointment.getAppointmentType() == null) {
+                appointment.setAppointmentType("Diabetes follow-up");
+                changed = true;
+            }
+            if (appointment.getLocation() == null) {
+                appointment.setLocation("Kigali Diabetes Clinic, Room 4");
+                changed = true;
+            }
+            if (appointment.getReason() == null) {
+                appointment.setReason("Routine follow-up to review glucose trends and medication adherence.");
+                changed = true;
+            }
+            if (changed) {
+                appointmentRepository.save(appointment);
             }
         }
     }

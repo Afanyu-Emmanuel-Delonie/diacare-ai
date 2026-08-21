@@ -65,8 +65,10 @@ function buildNav(role) {
     {
       label: 'Medical Records',
       icon: MdFolderOpen,
-      path: '/dashboard/medical-records',
-      single: true,
+      children: [
+        { label: 'Records', path: '/dashboard/medical-records' },
+        { label: 'History', path: '/dashboard/medical-records/history' },
+      ],
     },
     {
       label: 'Appointments',
@@ -77,8 +79,11 @@ function buildNav(role) {
     {
       label: 'Medications',
       icon: MdMedication,
-      path: '/dashboard/medications',
-      single: true,
+      children: [
+        { label: 'All Medications', path: '/dashboard/medications' },
+        { label: 'Schedule',        path: '/dashboard/medications/schedule' },
+        { label: 'Adherence',       path: '/dashboard/medications/adherence' },
+      ],
     },
     {
       label: 'Health Monitoring',
@@ -119,10 +124,13 @@ function buildNav(role) {
         single: true,
       },
       {
-        label: 'Audit Logs',
+        label: 'Audit & Security',
         icon: MdSecurity,
-        path: '/dashboard/admin/audit-logs',
-        single: true,
+        children: [
+          { label: 'Audit Logs',        path: '/dashboard/admin/audit-logs' },
+          { label: 'System Reports',    path: '/dashboard/reports/admin/system' },
+          { label: 'Security Reports',  path: '/dashboard/reports/admin/audit' },
+        ],
       },
       {
         label: 'Settings',

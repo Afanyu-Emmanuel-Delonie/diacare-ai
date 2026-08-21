@@ -3,7 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MdAdd, MdSearch, MdCalendarMonth, MdCheckCircle,
   MdCancel, MdSchedule, MdChevronLeft, MdChevronRight,
+  MdInfoOutline, MdEditCalendar, MdEventAvailable, MdEventBusy,
 } from 'react-icons/md';
+import ActionsMenu from '../../../components/common/ActionsMenu.jsx';
 import ConfirmDialog from '../../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSkeleton from '../../../components/common/LoadingSkeleton.jsx';
@@ -69,35 +71,16 @@ function AppointmentRow({ appt, canManage, onStatus, onCancel, navigate }) {
           {meta.label}
         </span>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-1.5">
-          <button type="button" onClick={() => navigate(`/dashboard/appointments/${appt.id}`)}
-            className="rounded-lg border border-[#334155]/15 px-2.5 py-1 text-xs font-medium text-[#334155] hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">
-            More details
-          </button>
-          {canManage && (
-            <>
-              <button type="button" onClick={() => navigate(`/dashboard/appointments/${appt.id}/edit`)}
-                className="rounded-lg border border-[#334155]/15 px-2.5 py-1 text-xs font-medium text-[#334155] hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">
-                Reschedule
-              </button>
-              <button type="button" onClick={() => onStatus(appt, 'COMPLETED')}
-                className="rounded-lg bg-[#10B981]/10 px-2.5 py-1 text-xs font-semibold text-[#10B981] hover:bg-[#10B981]/20 transition-colors">
-                Complete
-              </button>
-              <button type="button" onClick={() => onStatus(appt, 'MISSED')}
-                className="rounded-lg bg-[#F59E0B]/10 px-2.5 py-1 text-xs font-semibold text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-colors">
-                Missed
-              </button>
-            </>
-          )}
-          {appt.status !== 'CANCELLED' && (
-            <button type="button" onClick={() => onCancel(appt)}
-              className="rounded-lg bg-[#DC2626]/10 px-2.5 py-1 text-xs font-semibold text-[#DC2626] hover:bg-[#DC2626]/20 transition-colors">
-              Cancel
-            </button>
-          )}
-        </div>
+      <td className="px-4 py-3 text-right">
+        <ActionsMenu
+          items={[
+            { key: 'details', label: 'More details', icon: MdInfoOutline, onClick: () => navigate(`/dashboard/appointments/${appt.id}`) },
+            canManage && { key: 'reschedule', label: 'Reschedule', icon: MdEditCalendar, onClick: () => navigate(`/dashboard/appointments/${appt.id}/edit`) },
+            canManage && { key: 'complete', label: 'Mark completed', icon: MdEventAvailable, onClick: () => onStatus(appt, 'COMPLETED') },
+            canManage && { key: 'missed', label: 'Mark missed', icon: MdEventBusy, onClick: () => onStatus(appt, 'MISSED') },
+            appt.status !== 'CANCELLED' && { key: 'cancel', label: 'Cancel', icon: MdCancel, danger: true, onClick: () => onCancel(appt) },
+          ]}
+        />
       </td>
     </tr>
   );
