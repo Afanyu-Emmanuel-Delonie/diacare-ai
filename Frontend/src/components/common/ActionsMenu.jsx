@@ -14,8 +14,14 @@ function ActionsMenu({ items }) {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
     const menuWidth = 190;
+    const estimatedHeight = visibleItems.length * 36 + 8;
     const left = Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8);
-    setCoords({ top: rect.bottom + 4, left: Math.max(8, left) });
+
+    // Flip to open upward when there isn't enough room below the trigger.
+    const opensUpward = rect.bottom + 4 + estimatedHeight > window.innerHeight && rect.top - estimatedHeight - 4 >= 0;
+    const top = opensUpward ? rect.top - estimatedHeight - 4 : rect.bottom + 4;
+
+    setCoords({ top: Math.max(8, top), left: Math.max(8, left) });
   };
 
   const toggle = () => {
@@ -68,20 +74,27 @@ function ActionsMenu({ items }) {
           style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000, width: 190 }}
           className="overflow-hidden rounded-xl border border-[#334155]/10 bg-white py-1 shadow-lg"
         >
-          {visibleItems.map((item, idx) => (
-            <button
-              key={item.key || idx}
-              type="button"
-              role="menuitem"
-              onClick={() => { setOpen(false); item.onClick(); }}
-              className={`flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm font-medium transition-colors ${
-                item.danger ? 'text-[#DC2626] hover:bg-[#DC2626]/10' : 'text-[#334155] hover:bg-[#f1f5f9]'
-              }`}
-            >
-              {item.icon ? <item.icon size={16} className="shrink-0" /> : null}
-              {item.label}
-            </button>
-          ))}
+          {visibleItems.map((item, idx) => {
+            const variant = item.variant || (item.danger ? 'danger' : 'default');
+            return (
+              <button
+                key={item.key || idx}
+                type="button"
+                role="menuitem"
+                disabled={item.disabled}
+                onClick={() => { setOpen(false); item.onClick(); }}
+                className={`flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  variant === 'danger' ? 'text-[#DC2626] hover:bg-[#DC2626]/10'
+                    : variant === 'warning' ? 'text-[#D97706] hover:bg-[#FFFBEB]'
+                    : variant === 'success' ? 'text-[#059669] hover:bg-[#ECFDF5]'
+                    : 'text-[#334155] hover:bg-[#f1f5f9]'
+                }`}
+              >
+                {item.icon ? <item.icon size={16} className="shrink-0" /> : null}
+                {item.label}
+              </button>
+            );
+          })}
         </div>,
         document.body
       )}

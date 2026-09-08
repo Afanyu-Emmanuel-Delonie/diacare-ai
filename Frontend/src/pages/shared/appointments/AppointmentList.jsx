@@ -36,7 +36,7 @@ function fmtDate(v) {
 
 function StatCard({ label, value, color, icon: Icon }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-[#334155]/10 bg-white p-4 shadow-sm">
+    <div className="flex items-center gap-3 rounded-xl border border-[#334155]/10 bg-white p-4">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${color}18` }}>
         <Icon size={20} style={{ color }} />
       </div>
@@ -171,7 +171,7 @@ function AppointmentList() {
         </div>
         {canCreate && (
           <Link to={patientId ? `/dashboard/appointments/new?patientId=${patientId}` : '/dashboard/appointments/new'}>
-            <button type="button" className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#1d4ed8] transition-colors">
+            <button type="button" className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-4 py-2 text-sm font-semibold text-white hover:bg-[#1d4ed8] transition-colors">
               <MdAdd size={16} /> New Appointment
             </button>
           </Link>
@@ -188,13 +188,13 @@ function AppointmentList() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
-        <div className="flex flex-1 min-w-[200px] items-center gap-2 rounded-xl border border-[#334155]/10 bg-white px-3 py-2 shadow-sm">
+        <div className="flex flex-1 min-w-[200px] items-center gap-2 rounded-xl border border-[#334155]/10 bg-white px-3 py-2">
           <MdSearch size={16} className="text-[#94a3b8]" />
           <input type="text" placeholder="Search patient, type, location..."
             value={search} onChange={(e) => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-sm text-[#334155] outline-none placeholder:text-[#94a3b8]" />
         </div>
-        <div className="flex items-center gap-1 rounded-xl border border-[#334155]/10 bg-white p-1 shadow-sm">
+        <div className="flex items-center gap-1 rounded-xl border border-[#334155]/10 bg-white p-1">
           {['ALL', ...appointmentStatuses].map((s) => (
             <button key={s} type="button" onClick={() => setStatusFilter(s)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${statusFilter === s ? 'bg-[#2563EB] text-white' : 'text-[#64748b] hover:text-[#1e293b]'}`}>
@@ -209,7 +209,7 @@ function AppointmentList() {
       {!error && filtered.length === 0 && <EmptyState title="No appointments found" message="No appointments match the current filters." />}
 
       {!error && filtered.length > 0 && (
-        <div className="rounded-xl border border-[#334155]/10 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-[#334155]/10 bg-white overflow-hidden">
           <div className="overflow-x-auto">
             <table className="mobile-card-table appointment-list-table w-full text-left">
               <thead>

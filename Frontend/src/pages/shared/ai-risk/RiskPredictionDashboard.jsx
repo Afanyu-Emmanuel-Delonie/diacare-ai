@@ -31,7 +31,7 @@ function riskColor(level) { return RISK_COLOR[level] || '#94a3b8'; }
 
 function StatCard({ label, value, color, icon: Icon, sub }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[#334155]/10 bg-white p-4 shadow-sm">
+    <div className="flex items-start gap-3 rounded-xl border border-[#334155]/10 bg-white p-4">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${color}18` }}>
         <Icon size={20} style={{ color }} />
       </div>
@@ -161,12 +161,12 @@ function RiskPredictionDashboard() {
         </div>
         <div className="flex gap-2">
           <Link to="/dashboard/ai-risk/history">
-            <button type="button" className="flex items-center gap-2 rounded-xl border border-[#334155]/15 bg-white px-4 py-2 text-sm font-semibold text-[#334155] shadow-sm hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">
+            <button type="button" className="flex items-center gap-2 rounded-xl border border-[#334155]/15 bg-white px-4 py-2 text-sm font-semibold text-[#334155] hover:border-[#2563EB] hover:text-[#2563EB] transition-colors">
               <MdHistory size={16} /> History
             </button>
           </Link>
           <Link to="/dashboard/ai-risk/emergency">
-            <button type="button" className="flex items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#b91c1c] transition-colors">
+            <button type="button" className="flex items-center gap-2 rounded-xl bg-[#DC2626] px-4 py-2 text-sm font-semibold text-white hover:bg-[#b91c1c] transition-colors">
               <MdEmergency size={16} /> Emergency
             </button>
           </Link>
@@ -183,7 +183,7 @@ function RiskPredictionDashboard() {
 
       {/* Trend chart */}
       {trendData.length > 0 && (
-        <div className="rounded-xl border border-[#334155]/10 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#334155]/10 bg-white p-5">
           <h2 className="mb-4 text-sm font-semibold text-[#1e293b]">Risk Trend (1=Low, 2=Moderate, 3=High, 4=Emergency)</h2>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +208,7 @@ function RiskPredictionDashboard() {
       )}
 
       {/* Form */}
-      <div className="rounded-xl border border-[#334155]/10 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-[#334155]/10 bg-white p-5">
         <h2 className="mb-4 text-sm font-semibold text-[#1e293b]">Generate AI-supported Risk Result</h2>
         <form className="grid gap-4 lg:grid-cols-2" onSubmit={handleSubmit}>
           {!isPatient && (
@@ -237,7 +237,7 @@ function RiskPredictionDashboard() {
           </label>
           <div className="flex items-end">
             <button type="submit" disabled={submitting}
-              className="w-full rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#1d4ed8] disabled:opacity-60 transition-colors">
+              className="w-full rounded-xl bg-[#2563EB] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#1d4ed8] disabled:opacity-60 transition-colors">
               {submitting ? 'Generating...' : 'Generate Risk Summary'}
             </button>
           </div>
@@ -250,7 +250,7 @@ function RiskPredictionDashboard() {
 
       {/* Latest result */}
       {latest ? (
-        <div className="rounded-xl border border-[#334155]/10 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-[#334155]/10 bg-white p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold text-[#1e293b]">Latest Risk Summary</h2>

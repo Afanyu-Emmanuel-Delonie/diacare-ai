@@ -43,10 +43,41 @@ public class Patient {
     @NotNull
     private LocalDate dateOfBirth;
 
+    @Size(max = 40)
+    private String diabetesType;
+
+    @Size(max = 20)
+    private String gender;
+
+    @Size(max = 255)
+    private String address;
+
+    @Size(max = 120)
+    private String emergencyContactName;
+
+    @Size(max = 20)
+    private String emergencyContactPhone;
+
+    private LocalDate diagnosisDate;
+
+    private Boolean active;
+
+    private Boolean deleted;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id")
     @JsonIgnore
     private Doctor doctor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nurse_id")
+    @JsonIgnore
+    private Nurse nurse;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "caregiver_id")
+    @JsonIgnore
+    private Caregiver caregiver;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GlucoseReading> glucoseReadings = new ArrayList<>();
@@ -87,6 +118,12 @@ public class Patient {
         if (uuid == null) {
             uuid = UUID.randomUUID();
         }
+        if (active == null) {
+            active = true;
+        }
+        if (deleted == null) {
+            deleted = false;
+        }
     }
 
     @PreUpdate
@@ -107,8 +144,28 @@ public class Patient {
     public void setPhone(String phone) { this.phone = phone; }
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    public String getDiabetesType() { return diabetesType; }
+    public void setDiabetesType(String diabetesType) { this.diabetesType = diabetesType; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public String getEmergencyContactName() { return emergencyContactName; }
+    public void setEmergencyContactName(String emergencyContactName) { this.emergencyContactName = emergencyContactName; }
+    public String getEmergencyContactPhone() { return emergencyContactPhone; }
+    public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
+    public LocalDate getDiagnosisDate() { return diagnosisDate; }
+    public void setDiagnosisDate(LocalDate diagnosisDate) { this.diagnosisDate = diagnosisDate; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+    public Boolean getDeleted() { return deleted; }
+    public void setDeleted(Boolean deleted) { this.deleted = deleted; }
     public Doctor getDoctor() { return doctor; }
     public void setDoctor(Doctor doctor) { this.doctor = doctor; }
+    public Nurse getNurse() { return nurse; }
+    public void setNurse(Nurse nurse) { this.nurse = nurse; }
+    public Caregiver getCaregiver() { return caregiver; }
+    public void setCaregiver(Caregiver caregiver) { this.caregiver = caregiver; }
     public List<GlucoseReading> getGlucoseReadings() { return glucoseReadings; }
     public void setGlucoseReadings(List<GlucoseReading> glucoseReadings) { this.glucoseReadings = glucoseReadings; }
     public List<Medication> getMedications() { return medications; }

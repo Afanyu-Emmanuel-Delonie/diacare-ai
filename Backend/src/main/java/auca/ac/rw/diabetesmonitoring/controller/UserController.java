@@ -51,4 +51,16 @@ public class UserController {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> activateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponseDto.from(userService.activate(id)));
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> deactivateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponseDto.from(userService.deactivate(id)));
+    }
 }

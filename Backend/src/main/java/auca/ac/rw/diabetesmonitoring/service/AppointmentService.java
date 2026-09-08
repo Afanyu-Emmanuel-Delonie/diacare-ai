@@ -22,13 +22,16 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public AppointmentService(AppointmentRepository appointmentRepository, PatientRepository patientRepository,
-                               DoctorRepository doctorRepository, UserRepository userRepository) {
+                               DoctorRepository doctorRepository, UserRepository userRepository,
+                               AuditLogService auditLogService) {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<Appointment> getAll() {
@@ -48,7 +51,9 @@ public class AppointmentService {
         Appointment appointment = new Appointment();
         applyRequest(appointment, request, principalName);
         appointment.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "UPCOMING");
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+        auditLogService.log("APPOINTMENT_CREATED", "SUCCESS", patientEmail(saved), "PATIENT", "Appointment scheduled for " + saved.getScheduledAt());
+        return saved;
     }
 
     public Appointment update(Long id, AppointmentRequestDto request) {
@@ -57,7 +62,9 @@ public class AppointmentService {
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             existing.setStatus(request.getStatus());
         }
-        return appointmentRepository.save(existing);
+        Appointment saved = appointmentRepository.save(existing);
+        auditLogService.log("APPOINTMENT_UPDATED", "SUCCESS", patientEmail(saved), "PATIENT", "Appointment updated");
+        return saved;
     }
 
     public Appointment updateStatus(Long id, String status) {
@@ -81,7 +88,13 @@ public class AppointmentService {
     }
 
     public void delete(Long id) {
-        appointmentRepository.delete(getById(id));
+        Appointment existing = getById(id);
+        appointmentRepository.delete(existing);
+        auditLogService.log("APPOINTMENT_DELETED", "SUCCESS", patientEmail(existing), "PATIENT", "Appointment deleted");
+    }
+
+    private String patientEmail(Appointment appointment) {
+        return appointment.getPatient() == null ? null : appointment.getPatient().getEmail();
     }
 
     private void applyRequest(Appointment appointment, AppointmentRequestDto request, String principalName) {

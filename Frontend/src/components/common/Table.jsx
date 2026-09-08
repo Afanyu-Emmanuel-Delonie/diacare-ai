@@ -1,58 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import ActionsMenu from './ActionsMenu.jsx';
 
 // ── Row action dropdown ───────────────────────────────────────────────────────
+// Thin wrapper around the shared, portal-based ActionsMenu so row actions
+// always float above the table instead of being clipped by its scroll container.
 export function RowActions({ actions = [] }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const items = useMemo(() => actions
+    .filter((action) => !action.hidden)
+    .map((action) => ({
+      key: action.label,
+      label: action.label,
+      icon: action.icon,
+      variant: action.variant,
+      disabled: action.disabled,
+      onClick: action.onClick,
+    })), [actions]);
 
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const visible = actions.filter((a) => !a.hidden);
-  if (visible.length === 0) return null;
-
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A] transition-colors"
-        aria-label="Row actions"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-xl border border-[#E2E8F0] bg-white py-1 shadow-lg">
-          {visible.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              disabled={action.disabled}
-              onClick={() => { setOpen(false); action.onClick(); }}
-              className={`flex w-full items-center gap-2.5 px-4 py-2 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                action.variant === 'danger'
-                  ? 'text-[#DC2626] hover:bg-[#FEF2F2]'
-                  : action.variant === 'warning'
-                    ? 'text-[#D97706] hover:bg-[#FFFBEB]'
-                    : action.variant === 'success'
-                      ? 'text-[#059669] hover:bg-[#ECFDF5]'
-                      : 'text-[#334155] hover:bg-[#F8FAFC]'
-              }`}
-            >
-              {action.icon && <span className="shrink-0">{action.icon}</span>}
-              {action.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <ActionsMenu items={items} />;
 }
 
 function getComparableValue(row, column) {
@@ -125,7 +89,7 @@ function Table({ columns = [], data = [], emptyMessage = 'No records available.'
             sortedData.map((row, rowIndex) => (
               <tr
                 key={row.id || rowIndex}
-                className="block overflow-hidden rounded-xl border border-[#334155]/15 bg-white shadow-sm md:table-row md:rounded-none md:border-0 md:shadow-none"
+                className="block overflow-hidden rounded-xl border border-[#334155]/15 bg-white md:table-row md:rounded-none md:border-0"
               >
                 {columns.map((column) => (
                   <td

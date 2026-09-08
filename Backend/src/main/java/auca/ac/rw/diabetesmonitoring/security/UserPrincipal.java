@@ -42,7 +42,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !Boolean.TRUE.equals(user.getDeleted());
     }
 
     @Override
@@ -52,6 +52,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return !Boolean.FALSE.equals(user.getActive());
     }
 }

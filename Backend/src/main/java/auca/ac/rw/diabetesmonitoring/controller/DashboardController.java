@@ -27,4 +27,22 @@ public class DashboardController {
     public ResponseEntity<Map<String, Object>> getDoctorDashboard(Authentication authentication) {
         return ResponseEntity.ok(dashboardService.getDoctorDashboard(authentication.getName()));
     }
+
+    @GetMapping("/nurse")
+    @PreAuthorize("hasRole('NURSE')")
+    public ResponseEntity<Map<String, Object>> getNurseDashboard(Authentication authentication) {
+        return ResponseEntity.ok(dashboardService.getNurseDashboard(authentication.getName()));
+    }
+
+    @GetMapping("/caregiver")
+    @PreAuthorize("hasRole('CAREGIVER')")
+    public ResponseEntity<Map<String, Object>> getCaregiverDashboard(Authentication authentication) {
+        return ResponseEntity.ok(dashboardService.getCaregiverDashboard(authentication.getName()));
+    }
+
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAdminDashboard() {
+        return ResponseEntity.ok(dashboardService.getAdminDashboard());
+    }
 }

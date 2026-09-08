@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "alerts")
+@Table(name = "alerts", indexes = @Index(name = "idx_alerts_patient_id", columnList = "patient_id"))
 public class Alert {
 
     @Id

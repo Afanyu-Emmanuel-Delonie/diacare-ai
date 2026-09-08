@@ -3,20 +3,28 @@ package auca.ac.rw.diabetesmonitoring.service;
 import auca.ac.rw.diabetesmonitoring.exception.ResourceNotFoundException;
 import auca.ac.rw.diabetesmonitoring.model.Alert;
 import auca.ac.rw.diabetesmonitoring.model.Appointment;
+import auca.ac.rw.diabetesmonitoring.model.AuditLog;
 import auca.ac.rw.diabetesmonitoring.model.GlucoseReading;
 import auca.ac.rw.diabetesmonitoring.model.Medication;
 import auca.ac.rw.diabetesmonitoring.model.Patient;
 import auca.ac.rw.diabetesmonitoring.repository.AlertRepository;
 import auca.ac.rw.diabetesmonitoring.repository.AppointmentRepository;
+import auca.ac.rw.diabetesmonitoring.repository.AuditLogRepository;
+import auca.ac.rw.diabetesmonitoring.repository.CaregiverRepository;
+import auca.ac.rw.diabetesmonitoring.repository.DoctorRepository;
 import auca.ac.rw.diabetesmonitoring.repository.GlucoseReadingRepository;
 import auca.ac.rw.diabetesmonitoring.repository.MedicationRepository;
+import auca.ac.rw.diabetesmonitoring.repository.NurseRepository;
 import auca.ac.rw.diabetesmonitoring.repository.PatientRepository;
+import auca.ac.rw.diabetesmonitoring.repository.ReportRepository;
+import auca.ac.rw.diabetesmonitoring.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,17 +43,122 @@ public class ReportAnalyticsService {
     private final MedicationRepository medicationRepository;
     private final AppointmentRepository appointmentRepository;
     private final AlertRepository alertRepository;
+    private final UserRepository userRepository;
+    private final DoctorRepository doctorRepository;
+    private final NurseRepository nurseRepository;
+    private final CaregiverRepository caregiverRepository;
+    private final ReportRepository reportRepository;
+    private final AuditLogRepository auditLogRepository;
 
     public ReportAnalyticsService(PatientRepository patientRepository,
                                   GlucoseReadingRepository glucoseReadingRepository,
                                   MedicationRepository medicationRepository,
                                   AppointmentRepository appointmentRepository,
-                                  AlertRepository alertRepository) {
+                                  AlertRepository alertRepository,
+                                  UserRepository userRepository,
+                                  DoctorRepository doctorRepository,
+                                  NurseRepository nurseRepository,
+                                  CaregiverRepository caregiverRepository,
+                                  ReportRepository reportRepository,
+                                  AuditLogRepository auditLogRepository) {
         this.patientRepository = patientRepository;
         this.glucoseReadingRepository = glucoseReadingRepository;
         this.medicationRepository = medicationRepository;
         this.appointmentRepository = appointmentRepository;
         this.alertRepository = alertRepository;
+        this.userRepository = userRepository;
+        this.doctorRepository = doctorRepository;
+        this.nurseRepository = nurseRepository;
+        this.caregiverRepository = caregiverRepository;
+        this.reportRepository = reportRepository;
+        this.auditLogRepository = auditLogRepository;
+    }
+
+    public Map<String, Object> systemReport(LocalDate startDate, LocalDate endDate) {
+        LocalDate resolvedEnd = endDate == null ? LocalDate.now() : endDate;
+        LocalDate resolvedStart = startDate == null ? resolvedEnd.minusDays(30) : startDate;
+        LocalDateTime rangeStart = resolvedStart.atStartOfDay();
+        LocalDateTime rangeEnd = resolvedEnd.plusDays(1).atStartOfDay().minusNanos(1);
+
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("totalUsers", userRepository.count());
+        metrics.put("totalPatients", patientRepository.count());
+        metrics.put("totalDoctors", doctorRepository.count());
+        metrics.put("totalNurses", nurseRepository.count());
+        metrics.put("totalCaregivers", caregiverRepository.count());
+        metrics.put("totalAppointments", appointmentRepository.count());
+        metrics.put("totalMedications", medicationRepository.count());
+        metrics.put("totalReports", reportRepository.count());
+
+        List<Map<String, Object>> activities = new ArrayList<>();
+        userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null && !u.getCreatedAt().isBefore(rangeStart) && !u.getCreatedAt().isAfter(rangeEnd))
+                .forEach(u -> activities.add(activityItem("New " + u.getRole().toLowerCase() + " account", u.getUsername() + " (" + u.getEmail() + ")", u.getCreatedAt())));
+        reportRepository.findAll().stream()
+                .filter(r -> r.getGeneratedOn() != null && !r.getGeneratedOn().isBefore(resolvedStart) && !r.getGeneratedOn().isAfter(resolvedEnd))
+                .forEach(r -> activities.add(activityItem("Report generated", r.getTitle(), r.getGeneratedOn().atStartOfDay())));
+        activities.sort(Comparator.comparing(a -> String.valueOf(a.get("dateTime")), Comparator.reverseOrder()));
+
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("reportName", "System Report");
+        report.put("period", period(resolvedStart, resolvedEnd));
+        report.put("metrics", metrics);
+        report.put("activities", activities.stream().limit(20).toList());
+        return report;
+    }
+
+    private static final List<String> SECURITY_ACTION_TYPES = List.of(
+            "LOGIN_FAILED", "REPEATED_LOGIN_FAILED", "UNAUTHORIZED_ACCESS", "ACCOUNT_LOCKOUT", "SYSTEM_ERROR");
+
+    public Map<String, Object> securityAuditReport(LocalDate startDate, LocalDate endDate) {
+        LocalDate resolvedEnd = endDate == null ? LocalDate.now() : endDate;
+        LocalDate resolvedStart = startDate == null ? resolvedEnd.minusDays(30) : startDate;
+        LocalDateTime rangeStart = resolvedStart.atStartOfDay();
+        LocalDateTime rangeEnd = resolvedEnd.plusDays(1).atStartOfDay().minusNanos(1);
+
+        List<AuditLog> logsInRange = auditLogRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(l -> l.getCreatedAt() != null && !l.getCreatedAt().isBefore(rangeStart) && !l.getCreatedAt().isAfter(rangeEnd))
+                .toList();
+
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("totalLoginAttempts", logsInRange.stream().filter(l -> "LOGIN".equals(l.getActionType()) || "LOGIN_FAILED".equals(l.getActionType())).count());
+        metrics.put("failedLogins", logsInRange.stream().filter(l -> "LOGIN_FAILED".equals(l.getActionType())).count());
+        metrics.put("unauthorizedAccessAttempts", logsInRange.stream().filter(l -> "UNAUTHORIZED_ACCESS".equals(l.getActionType())).count());
+        metrics.put("accountLockouts", logsInRange.stream().filter(l -> "ACCOUNT_LOCKOUT".equals(l.getActionType())).count());
+        metrics.put("systemErrors", logsInRange.stream().filter(l -> "SYSTEM_ERROR".equals(l.getActionType())).count());
+
+        List<Map<String, Object>> events = logsInRange.stream()
+                .filter(l -> SECURITY_ACTION_TYPES.contains(l.getActionType()))
+                .map(l -> {
+                    Map<String, Object> event = new LinkedHashMap<>();
+                    event.put("title", formatActionType(l.getActionType()) + (l.getEmail() != null ? " — " + l.getEmail() : ""));
+                    event.put("dateTime", l.getCreatedAt());
+                    event.put("description", l.getMessage());
+                    if (l.getIpAddress() != null) {
+                        event.put("details", Map.of("ipAddress", l.getIpAddress()));
+                    }
+                    return event;
+                })
+                .limit(20)
+                .toList();
+
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("reportName", "Security Audit Report");
+        report.put("period", period(resolvedStart, resolvedEnd));
+        report.put("metrics", metrics);
+        report.put("events", events);
+        return report;
+    }
+
+    private String formatActionType(String actionType) {
+        if (actionType == null) return "Event";
+        String[] parts = actionType.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String part : parts) {
+            if (!sb.isEmpty()) sb.append(' ');
+            sb.append(part.charAt(0)).append(part.substring(1).toLowerCase());
+        }
+        return sb.toString();
     }
 
     public Map<String, Object> patientHealthSummary(Long patientId) {
@@ -198,6 +311,14 @@ public class ReportAnalyticsService {
         }
         section.put("items", items);
         return section;
+    }
+
+    private Map<String, Object> activityItem(String title, String description, LocalDateTime dateTime) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("title", title);
+        item.put("description", description);
+        item.put("dateTime", dateTime);
+        return item;
     }
 
     private Map<String, Object> item(LocalDateTime dateTime, Map<String, Object> details) {

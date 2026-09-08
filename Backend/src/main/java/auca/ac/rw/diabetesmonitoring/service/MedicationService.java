@@ -16,17 +16,22 @@ public class MedicationService {
 
     private final MedicationRepository medicationRepository;
     private final PatientRepository patientRepository;
+    private final AuditLogService auditLogService;
 
-    public MedicationService(MedicationRepository medicationRepository, PatientRepository patientRepository) {
+    public MedicationService(MedicationRepository medicationRepository, PatientRepository patientRepository,
+                              AuditLogService auditLogService) {
         this.medicationRepository = medicationRepository;
         this.patientRepository = patientRepository;
+        this.auditLogService = auditLogService;
     }
 
     public Medication create(MedicationRequestDto request) {
         Medication medication = new Medication();
         applyRequest(medication, request);
         validate(medication);
-        return medicationRepository.save(medication);
+        Medication saved = medicationRepository.save(medication);
+        auditLogService.log("MEDICATION_CREATED", "SUCCESS", patientEmail(saved), "PATIENT", "Medication added: " + saved.getMedicationName());
+        return saved;
     }
 
     public List<Medication> getAll() {
@@ -46,7 +51,9 @@ public class MedicationService {
         Medication existing = getById(id);
         applyRequest(existing, request);
         validate(existing);
-        return medicationRepository.save(existing);
+        Medication saved = medicationRepository.save(existing);
+        auditLogService.log("MEDICATION_UPDATED", "SUCCESS", patientEmail(saved), "PATIENT", "Medication updated: " + saved.getMedicationName());
+        return saved;
     }
 
     public Medication updateAdherence(Long id, String adherenceStatus) {
@@ -59,6 +66,11 @@ public class MedicationService {
     public void delete(Long id) {
         Medication existing = getById(id);
         medicationRepository.delete(existing);
+        auditLogService.log("MEDICATION_DELETED", "SUCCESS", patientEmail(existing), "PATIENT", "Medication deleted: " + existing.getMedicationName());
+    }
+
+    private String patientEmail(Medication medication) {
+        return medication.getPatient() == null ? null : medication.getPatient().getEmail();
     }
 
     private void applyRequest(Medication medication, MedicationRequestDto request) {

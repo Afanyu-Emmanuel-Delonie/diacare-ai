@@ -21,13 +21,16 @@ public class MedicalRecordService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
 
     public MedicalRecordService(MedicalRecordRepository medicalRecordRepository, PatientRepository patientRepository,
-                                 DoctorRepository doctorRepository, UserRepository userRepository) {
+                                 DoctorRepository doctorRepository, UserRepository userRepository,
+                                 AuditLogService auditLogService) {
         this.medicalRecordRepository = medicalRecordRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public List<MedicalRecord> getAll() {
@@ -54,7 +57,9 @@ public class MedicalRecordService {
         record.setNotes(request.getNotes());
         record.setPatient(patient);
         record.setDoctor(resolveDoctor(principalName));
-        return medicalRecordRepository.save(record);
+        MedicalRecord saved = medicalRecordRepository.save(record);
+        auditLogService.log("PATIENT_RECORD_CREATED", "SUCCESS", patient.getEmail(), "PATIENT", "Medical record created: " + saved.getDiagnosis());
+        return saved;
     }
 
     public MedicalRecord update(Long id, MedicalRecordRequestDto request) {
@@ -64,12 +69,15 @@ public class MedicalRecordService {
         if (request.getPatientId() != null || (request.getPatientEmail() != null && !request.getPatientEmail().isBlank())) {
             existing.setPatient(resolvePatient(request));
         }
-        return medicalRecordRepository.save(existing);
+        MedicalRecord saved = medicalRecordRepository.save(existing);
+        auditLogService.log("PATIENT_RECORD_UPDATED", "SUCCESS", saved.getPatient() == null ? null : saved.getPatient().getEmail(), "PATIENT", "Medical record updated: " + saved.getDiagnosis());
+        return saved;
     }
 
     public void delete(Long id) {
         MedicalRecord existing = getById(id);
         medicalRecordRepository.delete(existing);
+        auditLogService.log("PATIENT_RECORD_DELETED", "SUCCESS", existing.getPatient() == null ? null : existing.getPatient().getEmail(), "PATIENT", "Medical record deleted: " + existing.getDiagnosis());
     }
 
     private Patient resolvePatient(MedicalRecordRequestDto request) {

@@ -8,7 +8,7 @@ function FilterPanel({ children, actions, defaultOpen = true }) {
   const childArray = Array.isArray(children) ? children.flat().filter(Boolean) : children ? [children] : [];
 
   return (
-    <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
+    <div className="rounded-2xl border border-[#e2e8f0] bg-white overflow-hidden">
       {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#f1f5f9]">
         <button

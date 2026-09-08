@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -80,6 +81,22 @@ public class ReportController {
         }
         YearMonth resolvedMonth = month == null || month.isBlank() ? YearMonth.now() : YearMonth.parse(month);
         return ResponseEntity.ok(reportAnalyticsService.monthlyPatientProgressReport(patientId, resolvedMonth));
+    }
+
+    @GetMapping("/admin/system")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAdminSystemReport(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return ResponseEntity.ok(reportAnalyticsService.systemReport(startDate, endDate));
+    }
+
+    @GetMapping("/admin/audit")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getAdminSecurityAuditReport(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return ResponseEntity.ok(reportAnalyticsService.securityAuditReport(startDate, endDate));
     }
 
     @GetMapping("/{id}")

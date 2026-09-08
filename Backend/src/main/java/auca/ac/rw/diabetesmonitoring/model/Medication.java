@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "medications")
+@Table(name = "medications", indexes = @Index(name = "idx_medications_patient_id", columnList = "patient_id"))
 public class Medication {
 
     @Id

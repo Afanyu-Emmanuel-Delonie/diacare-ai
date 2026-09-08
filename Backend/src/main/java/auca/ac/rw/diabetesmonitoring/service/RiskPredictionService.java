@@ -75,11 +75,13 @@ public class RiskPredictionService {
         if (signals.contains("Possible hyperglycemia") && signals.contains("Repeated abnormal readings")) {
             return "HIGH_RISK";
         }
+        // Any detected signal means the reading is not "normal" - never classify a flagged
+        // reading as LOW_RISK, or the guidance text below contradicts the signal itself.
         if (signals.size() >= 2) {
-            return "MODERATE_RISK";
+            return "HIGH_RISK";
         }
         if (signals.size() == 1) {
-            return "LOW_RISK";
+            return "MODERATE_RISK";
         }
         return "LOW_RISK";
     }

@@ -1,12 +1,26 @@
 import { useState } from 'react';
-import Badge from '../../../components/common/Badge.jsx';
+import {
+  MdDescription, MdLocalHospital, MdMedicalServices, MdMedication,
+  MdPeople, MdPeopleAlt, MdCalendarMonth, MdVolunteerActivism,
+} from 'react-icons/md';
+import DashboardStatCell from '../../../components/dashboard/DashboardStatCell.jsx';
 import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSpinner from '../../../components/common/LoadingSpinner.jsx';
 import useToast from '../../../hooks/useToast.js';
 import { getAdminSystemReport } from '../../../services/reportService.js';
-import { displayValue, formatLabel } from '../../../utils/reportFormatting.js';
 import ActivitySection from '../../shared/reports/ActivitySection.jsx';
 import ReportFilters from '../../shared/reports/ReportFilters.jsx';
+
+const METRIC_META = {
+  totalUsers: { label: 'Total Users', icon: MdPeople, color: '#2563EB' },
+  totalPatients: { label: 'Total Patients', icon: MdPeopleAlt, color: '#0EA5E9' },
+  totalDoctors: { label: 'Total Doctors', icon: MdLocalHospital, color: '#16A34A' },
+  totalNurses: { label: 'Total Nurses', icon: MdMedicalServices, color: '#F59E0B' },
+  totalCaregivers: { label: 'Total Caregivers', icon: MdVolunteerActivism, color: '#7C3AED' },
+  totalAppointments: { label: 'Total Appointments', icon: MdCalendarMonth, color: '#0EA5E9' },
+  totalMedications: { label: 'Total Medications', icon: MdMedication, color: '#16A34A' },
+  totalReports: { label: 'Total Reports', icon: MdDescription, color: '#64748B' },
+};
 
 function AdminSystemReports() {
   const [filters, setFilters] = useState({ search: '', startDate: '', endDate: '' });
@@ -27,14 +41,14 @@ function AdminSystemReports() {
       .finally(() => setLoading(false));
   };
 
-  const metrics = Object.entries(report?.metrics || report?.summary || {});
+  const metrics = Object.entries(report?.metrics || {});
 
   return (
     <div className="space-y-6">
-      <div>
-        <Badge variant="info">ADMIN</Badge>
-        <h1 className="mt-3 text-2xl font-bold text-[#334155]">System Reports</h1>
-        <p className="mt-1 text-sm text-[#334155]/80">System-wide activity and usage metrics.</p>
+      <div className="border-b border-[#E2E8F0] pb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#2563EB]">Admin</p>
+        <h1 className="mt-1 text-2xl font-bold text-[#1e293b]">System Reports</h1>
+        <p className="mt-1 text-sm text-[#64748b]">System-wide account and activity metrics.</p>
       </div>
 
       <ReportFilters filters={filters} onChange={setFilters} onSubmit={loadReport} loading={loading} />
@@ -47,16 +61,14 @@ function AdminSystemReports() {
       {!loading && !error && report && (
         <>
           {metrics.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {metrics.map(([key, value]) => (
-                <div key={key} className="rounded-lg border border-[#334155]/15 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#334155]/70">{formatLabel(key)}</p>
-                  <p className="mt-1 text-xl font-bold text-[#334155]">{displayValue(value)}</p>
-                </div>
-              ))}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {metrics.map(([key, value]) => {
+                const meta = METRIC_META[key] || { label: key, icon: MdDescription, color: '#64748B' };
+                return <DashboardStatCell key={key} icon={meta.icon} label={meta.label} value={value} helper="" color={meta.color} />;
+              })}
             </div>
           )}
-          <ActivitySection title="Recent System Activity" items={report.activities || report.recentActivity || []} />
+          <ActivitySection title="Recent System Activity" items={report.activities || []} emptyMessage="No new accounts or reports in the selected period." />
         </>
       )}
     </div>

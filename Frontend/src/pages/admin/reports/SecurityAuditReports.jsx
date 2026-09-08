@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import Badge from '../../../components/common/Badge.jsx';
+import { MdBlock, MdErrorOutline, MdLock, MdLogin, MdWarning } from 'react-icons/md';
+import DashboardStatCell from '../../../components/dashboard/DashboardStatCell.jsx';
 import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSpinner from '../../../components/common/LoadingSpinner.jsx';
 import useToast from '../../../hooks/useToast.js';
 import { getAdminSecurityAuditReport } from '../../../services/reportService.js';
-import { displayValue, formatLabel } from '../../../utils/reportFormatting.js';
 import ActivitySection from '../../shared/reports/ActivitySection.jsx';
 import ReportFilters from '../../shared/reports/ReportFilters.jsx';
+
+const METRIC_META = {
+  totalLoginAttempts: { label: 'Total Login Attempts', icon: MdLogin, color: '#2563EB' },
+  failedLogins: { label: 'Failed Logins', icon: MdWarning, color: '#D97706', urgent: true },
+  unauthorizedAccessAttempts: { label: 'Unauthorized Access', icon: MdBlock, color: '#DC2626', urgent: true },
+  accountLockouts: { label: 'Account Lockouts', icon: MdLock, color: '#DC2626', urgent: true },
+  systemErrors: { label: 'System Errors', icon: MdErrorOutline, color: '#64748B' },
+};
 
 function SecurityAuditReports() {
   const [filters, setFilters] = useState({ search: '', startDate: '', endDate: '' });
@@ -27,14 +35,14 @@ function SecurityAuditReports() {
       .finally(() => setLoading(false));
   };
 
-  const metrics = Object.entries(report?.metrics || report?.summary || {});
+  const metrics = Object.entries(report?.metrics || {});
 
   return (
     <div className="space-y-6">
-      <div>
-        <Badge variant="warning">SECURITY</Badge>
-        <h1 className="mt-3 text-2xl font-bold text-[#334155]">Security Audit Reports</h1>
-        <p className="mt-1 text-sm text-[#334155]/80">Login activity, access events, and security alerts.</p>
+      <div className="border-b border-[#E2E8F0] pb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#D97706]">Security</p>
+        <h1 className="mt-1 text-2xl font-bold text-[#1e293b]">Security Audit Reports</h1>
+        <p className="mt-1 text-sm text-[#64748b]">Failed logins, unauthorized access attempts, and account lockouts.</p>
       </div>
 
       <ReportFilters filters={filters} onChange={setFilters} onSubmit={loadReport} loading={loading} />
@@ -47,16 +55,14 @@ function SecurityAuditReports() {
       {!loading && !error && report && (
         <>
           {metrics.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {metrics.map(([key, value]) => (
-                <div key={key} className="rounded-lg border border-[#334155]/15 bg-white p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#334155]/70">{formatLabel(key)}</p>
-                  <p className="mt-1 text-xl font-bold text-[#334155]">{displayValue(value)}</p>
-                </div>
-              ))}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {metrics.map(([key, value]) => {
+                const meta = METRIC_META[key] || { label: key, icon: MdErrorOutline, color: '#64748B' };
+                return <DashboardStatCell key={key} icon={meta.icon} label={meta.label} value={value} helper="" color={meta.color} urgent={meta.urgent} />;
+              })}
             </div>
           )}
-          <ActivitySection title="Security Events" items={report.events || report.securityEvents || []} />
+          <ActivitySection title="Security Events" items={report.events || []} emptyMessage="No security events in the selected period." />
         </>
       )}
     </div>
