@@ -366,7 +366,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                     patient.setCaregiver(caregiver);
                     patient.setUuid(UUID.randomUUID());
                     Patient saved = patientRepository.save(patient);
-                    saved.setPatientCode(String.format("Dia%04d", saved.getId()));
+                    saved.setPatientCode(String.format("Dia%03d", saved.getId()));
                     return patientRepository.save(saved);
                 });
     }
@@ -374,7 +374,7 @@ public class DemoDataSeeder implements CommandLineRunner {
     private Patient backfillPatient(Patient patient, String diabetesType, String gender, Doctor doctor, Nurse nurse, Caregiver caregiver) {
         boolean changed = false;
         if (patient.getUuid() == null) { patient.setUuid(UUID.randomUUID()); changed = true; }
-        if (patient.getPatientCode() == null) { patient.setPatientCode(String.format("Dia%04d", patient.getId())); changed = true; }
+        if (patient.getPatientCode() == null) { patient.setPatientCode(String.format("Dia%03d", patient.getId())); changed = true; }
         if (patient.getDiabetesType() == null) { patient.setDiabetesType(diabetesType); changed = true; }
         if (patient.getGender() == null) { patient.setGender(gender); changed = true; }
         if (patient.getAddress() == null) { patient.setAddress("Kigali, Rwanda"); changed = true; }

@@ -95,7 +95,7 @@ public class PatientService {
     }
 
     private String formatPatientCode(Long id) {
-        return String.format("Dia%04d", id);
+        return String.format("Dia%03d", id);
     }
 
     public List<Patient> getAll() {
