@@ -17,12 +17,14 @@ public class MedicationService {
     private final MedicationRepository medicationRepository;
     private final PatientRepository patientRepository;
     private final AuditLogService auditLogService;
+    private final AlertService alertService;
 
     public MedicationService(MedicationRepository medicationRepository, PatientRepository patientRepository,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService, AlertService alertService) {
         this.medicationRepository = medicationRepository;
         this.patientRepository = patientRepository;
         this.auditLogService = auditLogService;
+        this.alertService = alertService;
     }
 
     public Medication create(MedicationRequestDto request) {
@@ -58,9 +60,18 @@ public class MedicationService {
 
     public Medication updateAdherence(Long id, String adherenceStatus) {
         Medication existing = getById(id);
+        boolean wasAlreadyMissed = "MISSED".equalsIgnoreCase(existing.getAdherenceStatus());
         existing.setAdherenceStatus(adherenceStatus);
         existing.setLastAdherenceUpdatedAt(LocalDateTime.now());
-        return medicationRepository.save(existing);
+        Medication saved = medicationRepository.save(existing);
+
+        if ("MISSED".equalsIgnoreCase(adherenceStatus) && !wasAlreadyMissed && saved.getPatient() != null) {
+            alertService.raiseSystemAlert(saved.getPatient(),
+                    "Missed medication dose",
+                    saved.getMedicationName() + " was not confirmed as taken for " + saved.getPatient().getFullName() + ".",
+                    "MEDICATION_REMINDER", "WARNING", null);
+        }
+        return saved;
     }
 
     public void delete(Long id) {

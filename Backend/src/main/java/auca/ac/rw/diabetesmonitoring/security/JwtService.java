@@ -1,6 +1,7 @@
 package auca.ac.rw.diabetesmonitoring.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -81,5 +82,26 @@ public class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
         return claimsResolver.apply(claims);
+    }
+
+    /**
+     * Validates the token's signature (always required) and returns its claims even if the
+     * token has expired, as long as it expired no more than {@code graceMs} ago. Used only by
+     * the session-refresh flow: it lets an actively-used session renew seamlessly for a short
+     * window after expiry, without keeping a separate long-lived refresh token. A token that
+     * fails signature verification (tampered, or signed with an old/rotated secret) never
+     * qualifies - only {@link ExpiredJwtException} is treated leniently.
+     */
+    public Claims extractClaimsWithinGrace(String token, long graceMs) {
+        try {
+            return Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token).getPayload();
+        } catch (ExpiredJwtException ex) {
+            Claims claims = ex.getClaims();
+            long expiredForMs = System.currentTimeMillis() - claims.getExpiration().getTime();
+            if (expiredForMs <= graceMs) {
+                return claims;
+            }
+            throw ex;
+        }
     }
 }

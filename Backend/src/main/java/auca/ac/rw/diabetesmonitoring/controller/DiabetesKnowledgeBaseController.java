@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/diabetes-knowledge")
-@CrossOrigin(origins = "*")
 public class DiabetesKnowledgeBaseController {
 
     private final DiabetesKnowledgeBaseService diabetesKnowledgeBaseService;

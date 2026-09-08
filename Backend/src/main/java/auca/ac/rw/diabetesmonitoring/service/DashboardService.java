@@ -467,19 +467,17 @@ public class DashboardService {
     }
 
     /**
-     * Scopes the dashboard to the staff member's assigned patients when a linked profile
-     * exists and has at least one assignment; otherwise falls back to all patients, so
-     * accounts without assignments yet (or predating the assignment feature) still see data.
+     * Scopes the dashboard to the staff member's assigned patients only. An account with no
+     * linked domain profile, or with no patients assigned yet, sees an empty roster rather
+     * than falling back to every patient in the system — a nurse or caregiver must never see
+     * data for a patient they have not been assigned to.
      */
     private <T> List<Patient> resolveScopedPatients(String principalName,
                                                       java.util.function.Function<String, java.util.Optional<T>> resolveProfile,
                                                       java.util.function.Function<T, List<Patient>> findAssigned) {
         return resolveProfile.apply(principalName)
-                .map(profile -> {
-                    List<Patient> assigned = findAssigned.apply(profile);
-                    return assigned.isEmpty() ? patientRepository.findAll() : assigned;
-                })
-                .orElseGet(patientRepository::findAll);
+                .map(findAssigned)
+                .orElseGet(List::of);
     }
 
     private String toDisplayRiskLevel(String riskCategory) {

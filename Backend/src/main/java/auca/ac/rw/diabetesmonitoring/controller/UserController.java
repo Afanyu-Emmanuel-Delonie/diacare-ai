@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','CAREGIVER')")
 public class UserController {
 

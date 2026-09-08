@@ -23,15 +23,17 @@ public class AppointmentService {
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
     private final AuditLogService auditLogService;
+    private final AlertService alertService;
 
     public AppointmentService(AppointmentRepository appointmentRepository, PatientRepository patientRepository,
                                DoctorRepository doctorRepository, UserRepository userRepository,
-                               AuditLogService auditLogService) {
+                               AuditLogService auditLogService, AlertService alertService) {
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.userRepository = userRepository;
         this.auditLogService = auditLogService;
+        this.alertService = alertService;
     }
 
     public List<Appointment> getAll() {
@@ -53,6 +55,14 @@ public class AppointmentService {
         appointment.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "UPCOMING");
         Appointment saved = appointmentRepository.save(appointment);
         auditLogService.log("APPOINTMENT_CREATED", "SUCCESS", patientEmail(saved), "PATIENT", "Appointment scheduled for " + saved.getScheduledAt());
+
+        if (saved.getPatient() != null && saved.getScheduledAt() != null) {
+            LocalDateTime reminderAt = saved.getReminderAt() != null ? saved.getReminderAt() : saved.getScheduledAt().minusHours(24);
+            alertService.raiseSystemAlert(saved.getPatient(),
+                    "Upcoming appointment reminder",
+                    "An appointment is scheduled for " + saved.getScheduledAt() + ".",
+                    "APPOINTMENT_REMINDER", "INFO", reminderAt);
+        }
         return saved;
     }
 

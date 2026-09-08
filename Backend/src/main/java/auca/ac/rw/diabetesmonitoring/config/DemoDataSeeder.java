@@ -244,21 +244,46 @@ public class DemoDataSeeder implements CommandLineRunner {
         }
     }
 
+    // {title, message, notificationType, severity} - notificationType values match what
+    // notificationService.js's normalizeCategory checks for exactly (MEDICATION_REMINDER,
+    // APPOINTMENT_REMINDER, AI_RISK, EMERGENCY); the rest are inferred client-side from
+    // keywords in the title/message, so those keywords ("glucose", "laboratory", "doctor
+    // review") are deliberately present below.
+    private static final String[][] ALERT_TEMPLATES = {
+            {"Elevated glucose reading", "Latest glucose reading was above the target range. Review recommended.", "BLOOD_GLUCOSE_ALERT", "WARNING"},
+            {"Missed medication dose", "A scheduled medication dose was not confirmed as taken.", "MEDICATION_REMINDER", "WARNING"},
+            {"Upcoming appointment reminder", "An appointment is scheduled within the next week.", "APPOINTMENT_REMINDER", "INFO"},
+            {"AI-supported risk alert", "Recent glucose pattern shows an elevated risk signal. Monitoring support only.", "AI_RISK", "WARNING"},
+            {"Emergency risk alert", "A reading was outside the safe range and may require urgent attention.", "EMERGENCY", "CRITICAL"},
+            {"New laboratory result available", "A new laboratory result has been recorded for review.", "LABORATORY_RESULT_NOTIFICATION", "INFO"},
+            {"Doctor review posted", "A doctor review comment was added to the patient record.", "DOCTOR_REVIEW_NOTIFICATION", "INFO"},
+            {"System notification", "Patient profile was updated by the care team.", "GENERAL_SYSTEM_NOTIFICATION", "INFO"},
+    };
+
     private void seedAlerts(Patient patient) {
         if (random.nextInt(3) == 0) {
             return; // not every patient has an active alert
         }
-        String[][] alerts = {
-                {"Elevated glucose reading", "Latest reading was above the target range. Review recommended."},
-                {"Missed medication dose", "A scheduled medication dose was not confirmed as taken."},
-                {"Upcoming appointment reminder", "An appointment is scheduled within the next week."},
-        };
-        String[] chosen = alerts[random.nextInt(alerts.length)];
-        Alert alert = new Alert();
-        alert.setTitle(chosen[0]);
-        alert.setMessage(chosen[1]);
-        alert.setPatient(patient);
-        alertRepository.save(alert);
+        int count = 1 + random.nextInt(2);
+        for (int i = 0; i < count; i++) {
+            String[] chosen = ALERT_TEMPLATES[random.nextInt(ALERT_TEMPLATES.length)];
+            Alert alert = new Alert();
+            alert.setTitle(chosen[0]);
+            alert.setMessage(chosen[1]);
+            alert.setNotificationType(chosen[2]);
+            alert.setSeverity(chosen[3]);
+            alert.setPatient(patient);
+            alert.setCreatedBy("System");
+            if ("APPOINTMENT_REMINDER".equals(chosen[2]) || "MEDICATION_REMINDER".equals(chosen[2])) {
+                alert.setReminderAt(LocalDateTime.now().plusDays(1 + random.nextInt(6)));
+            }
+            // Roughly a third already read, so Notification History has demo content too.
+            if (random.nextInt(3) == 0) {
+                alert.setRead(true);
+                alert.setReadAt(LocalDateTime.now().minusHours(1 + random.nextInt(48)));
+            }
+            alertRepository.save(alert);
+        }
     }
 
     private void seedLabResults(Patient patient) {

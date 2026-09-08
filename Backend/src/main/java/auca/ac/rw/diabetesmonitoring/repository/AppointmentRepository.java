@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -13,4 +14,5 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByPatientIdOrderByScheduledAtDesc(Long patientId);
     List<Appointment> findByPatientIdAndScheduledAtBetweenOrderByScheduledAtDesc(
             Long patientId, LocalDateTime start, LocalDateTime end);
+    List<Appointment> findByPatientIdIn(Collection<Long> patientIds);
 }

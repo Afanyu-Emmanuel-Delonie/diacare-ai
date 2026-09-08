@@ -79,31 +79,44 @@ public class Patient {
     @JsonIgnore
     private Caregiver caregiver;
 
+    // None of these back-reference collections are ever serialized: every controller returns a
+    // hand-built response DTO instead of a raw Patient, and this is the defense-in-depth backstop
+    // for that convention - see Doctor.patients for the leak this exact pattern caused when it
+    // was missing on an inverse @OneToMany that WAS reachable through a raw entity response.
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<GlucoseReading> glucoseReadings = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Medication> medications = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Appointment> appointments = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Alert> alerts = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Report> reports = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<MedicalRecord> medicalRecords = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<LabResult> labResults = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<LifestyleActivity> lifestyleActivities = new ArrayList<>();
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Message> messages = new ArrayList<>();
 
     @Column(updatable = false)
@@ -132,6 +145,11 @@ public class Patient {
     }
 
     public Long getId() { return id; }
+    // Intentionally settable: lets callers bind a reference-only Patient (id only, e.g. from a
+    // nested `{"patient":{"id":..}}` request body on GlucoseReading/Alert/LabResult/etc.) without
+    // re-fetching the full row. Hibernate's IDENTITY unsaved-value check treats a non-null id as
+    // "already persisted", so this never triggers an accidental insert.
+    public void setId(Long id) { this.id = id; }
     public UUID getUuid() { return uuid; }
     public void setUuid(UUID uuid) { this.uuid = uuid; }
     public String getPatientCode() { return patientCode; }

@@ -5,6 +5,8 @@ import auca.ac.rw.diabetesmonitoring.model.User;
 import auca.ac.rw.diabetesmonitoring.repository.UserRepository;
 import auca.ac.rw.diabetesmonitoring.security.JwtService;
 import auca.ac.rw.diabetesmonitoring.security.LoginRateLimiter;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -101,5 +105,39 @@ class AuthServiceTest {
         }
 
         assertThrows(RateLimitExceededException.class, () -> authService.authenticate("attacker", "wrongpassword"));
+    }
+
+    private Claims claimsFor(String subject) {
+        return Jwts.claims().subject(subject).build();
+    }
+
+    @Test
+    void refreshIssuesNewTokenForActiveAccount() {
+        User user = activeUser();
+        when(jwtService.extractClaimsWithinGrace(eq("recently-expired-token"), anyLong())).thenReturn(claimsFor("doctor.demo"));
+        when(userRepository.findByUsername("doctor.demo")).thenReturn(Optional.of(user));
+        when(jwtService.generateToken("doctor.demo", "DOCTOR")).thenReturn("new-token");
+
+        String token = authService.refresh("recently-expired-token");
+
+        assertEquals("new-token", token);
+    }
+
+    @Test
+    void refreshRejectsTokenExpiredBeyondGraceWindow() {
+        when(jwtService.extractClaimsWithinGrace(eq("stale-token"), anyLong()))
+                .thenThrow(new io.jsonwebtoken.ExpiredJwtException(null, claimsFor("doctor.demo"), "expired"));
+
+        assertThrows(IllegalArgumentException.class, () -> authService.refresh("stale-token"));
+    }
+
+    @Test
+    void refreshRejectsDeactivatedAccount() {
+        User user = activeUser();
+        user.setActive(false);
+        when(jwtService.extractClaimsWithinGrace(eq("recently-expired-token"), anyLong())).thenReturn(claimsFor("doctor.demo"));
+        when(userRepository.findByUsername("doctor.demo")).thenReturn(Optional.of(user));
+
+        assertThrows(IllegalArgumentException.class, () -> authService.refresh("recently-expired-token"));
     }
 }

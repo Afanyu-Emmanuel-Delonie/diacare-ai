@@ -18,12 +18,14 @@ public class RiskPredictionPersistenceService {
     private final RiskPredictionRepository riskPredictionRepository;
     private final PatientRepository patientRepository;
     private final RiskPredictionService riskPredictionService;
+    private final AlertService alertService;
 
     public RiskPredictionPersistenceService(RiskPredictionRepository riskPredictionRepository, PatientRepository patientRepository,
-                                             RiskPredictionService riskPredictionService) {
+                                             RiskPredictionService riskPredictionService, AlertService alertService) {
         this.riskPredictionRepository = riskPredictionRepository;
         this.patientRepository = patientRepository;
         this.riskPredictionService = riskPredictionService;
+        this.alertService = alertService;
     }
 
     public RiskPrediction create(RiskPredictionRequestDto request) {
@@ -44,9 +46,25 @@ public class RiskPredictionPersistenceService {
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + request.getPatientId()));
             prediction.setPatient(patient);
+            raiseRiskAlertIfNeeded(patient, result);
         }
 
         return riskPredictionRepository.save(prediction);
+    }
+
+    /** LOW_RISK never alerts — only a flagged reading is worth surfacing as a notification. */
+    private void raiseRiskAlertIfNeeded(Patient patient, RiskPredictionResult result) {
+        String category = result.getRiskCategory();
+        if (category == null || "LOW_RISK".equals(category)) {
+            return;
+        }
+        boolean emergency = "EMERGENCY_RISK".equals(category);
+        alertService.raiseSystemAlert(patient,
+                emergency ? "Emergency risk alert" : "AI-supported risk alert",
+                result.getAlertMessage(),
+                emergency ? "EMERGENCY" : "AI_RISK",
+                emergency ? "CRITICAL" : "HIGH_RISK".equals(category) ? "WARNING" : "INFO",
+                null);
     }
 
     public List<RiskPrediction> getAll() {

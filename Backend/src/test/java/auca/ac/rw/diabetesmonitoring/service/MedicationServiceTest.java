@@ -31,6 +31,9 @@ class MedicationServiceTest {
     @Mock
     private AuditLogService auditLogService;
 
+    @Mock
+    private AlertService alertService;
+
     @InjectMocks
     private MedicationService medicationService;
 

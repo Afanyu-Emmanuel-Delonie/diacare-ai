@@ -6,6 +6,7 @@ import auca.ac.rw.diabetesmonitoring.dto.UserResponseDto;
 import auca.ac.rw.diabetesmonitoring.service.AuditLogService;
 import auca.ac.rw.diabetesmonitoring.service.AuthService;
 import auca.ac.rw.diabetesmonitoring.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
@@ -33,6 +33,16 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest credentials) {
         String token = authService.authenticate(credentials.getUsernameOrEmail(), credentials.getPassword());
         return ResponseEntity.ok(Map.of("message", "Login successful", "token", token));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "No session token was provided."));
+        }
+        String token = authService.refresh(authHeader.substring(7));
+        return ResponseEntity.ok(Map.of("message", "Session renewed", "token", token));
     }
 
     @PostMapping("/logout")
