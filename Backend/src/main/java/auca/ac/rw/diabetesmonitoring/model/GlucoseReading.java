@@ -1,6 +1,6 @@
 package auca.ac.rw.diabetesmonitoring.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "glucose_readings")
+@Table(name = "glucose_readings", indexes = @Index(name = "idx_glucose_readings_patient_id", columnList = "patient_id"))
 public class GlucoseReading {
 
     @Id
@@ -27,7 +27,7 @@ public class GlucoseReading {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")
-    @JsonIgnore
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Patient patient;
 
     @Column(updatable = false)

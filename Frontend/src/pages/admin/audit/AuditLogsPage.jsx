@@ -152,10 +152,27 @@ function AuditLogsPage() {
   const paginatedLogs = visibleLogs.slice(page * pageSize, page * pageSize + pageSize);
 
   const columns = [
-    { key: 'date', header: 'Date' },
-    { key: 'time', header: 'Time' },
-    { key: 'email', header: 'Email' },
-    { key: 'userRole', header: 'Role' },
+    {
+      key: 'date',
+      header: 'Date & Time',
+      render: (row) => (
+        <div>
+          <p className="font-semibold text-[#334155]">{row.date}</p>
+          <p className="text-xs text-[#94a3b8]">{row.time}</p>
+        </div>
+      ),
+      sortValue: (row) => `${row.date} ${row.time}`
+    },
+    {
+      key: 'email',
+      header: 'User',
+      render: (row) => (
+        <div>
+          <p className="font-semibold text-[#334155]">{row.email || 'Unknown'}</p>
+          <p className="text-xs text-[#94a3b8]">{row.userRole || '—'}</p>
+        </div>
+      )
+    },
     { key: 'ipAddress', header: 'IP Address' },
     { key: 'device', header: 'Device' },
     { key: 'actionType', header: 'Action', render: (row) => formatLabel(row.actionType) },
@@ -169,11 +186,12 @@ function AuditLogsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+      <div className="flex flex-col justify-between gap-3 border-b border-[#E2E8F0] pb-5 md:flex-row md:items-end">
         <div>
-          <h1 className="text-2xl font-bold text-[#334155]">Audit Logs</h1>
-          <p className="mt-2 max-w-3xl text-sm text-[#334155]/80">
-            Review authentication events, access attempts, account changes, report downloads, clinical record changes, and system errors.
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#D97706]">Security</p>
+          <h1 className="mt-1 text-2xl font-bold text-[#1e293b]">Audit Logs</h1>
+          <p className="mt-1 max-w-3xl text-sm text-[#64748b]">
+            Authentication events, access attempts, account changes, and system errors.
           </p>
         </div>
         <Button variant="secondary" onClick={() => window.print()}>
@@ -262,17 +280,19 @@ function AuditLogsPage() {
         </form>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="flex flex-wrap gap-2 rounded-xl border border-[#E2E8F0] bg-white p-3">
         <button
           type="button"
           onClick={() => {
             setSelectedCategory('ALL');
             setPage(0);
           }}
-          className={`rounded-lg border p-4 text-left ${selectedCategory === 'ALL' ? 'border-[#2563EB] bg-[#2563EB] text-[#FFFFFF]' : 'border-[#334155]/15 bg-[#FFFFFF] text-[#334155]'}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            selectedCategory === 'ALL' ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#334155] hover:bg-[#E2E8F0]'
+          }`}
         >
-          <p className="text-sm font-semibold">All Audit Logs</p>
-          <p className="mt-2 text-2xl font-bold">{logs.length}</p>
+          All Logs
+          <span className={`rounded-full px-1.5 text-[11px] ${selectedCategory === 'ALL' ? 'bg-white/20' : 'bg-white text-[#64748b]'}`}>{logs.length}</span>
         </button>
         {auditCategories.map((category) => (
           <button
@@ -282,10 +302,14 @@ function AuditLogsPage() {
               setSelectedCategory(category.key);
               setPage(0);
             }}
-            className={`rounded-lg border p-4 text-left ${selectedCategory === category.key ? 'border-[#2563EB] bg-[#2563EB] text-[#FFFFFF]' : 'border-[#334155]/15 bg-[#FFFFFF] text-[#334155]'}`}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              selectedCategory === category.key ? 'bg-[#2563EB] text-white' : 'bg-[#F1F5F9] text-[#334155] hover:bg-[#E2E8F0]'
+            }`}
           >
-            <p className="text-sm font-semibold">{category.label}</p>
-            <p className="mt-2 text-2xl font-bold">{categoryCounts[category.key] || 0}</p>
+            {category.label}
+            <span className={`rounded-full px-1.5 text-[11px] ${selectedCategory === category.key ? 'bg-white/20' : 'bg-white text-[#64748b]'}`}>
+              {categoryCounts[category.key] || 0}
+            </span>
           </button>
         ))}
       </div>

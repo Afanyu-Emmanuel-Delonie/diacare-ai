@@ -1,5 +1,6 @@
 package auca.ac.rw.diabetesmonitoring.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -31,7 +32,12 @@ public class Doctor {
     @Size(max = 50)
     private String specialty;
 
+    // Never serialized: with spring.jpa.open-in-view enabled, a raw Doctor response would
+    // otherwise lazily pull in every assigned patient AND all of their nested clinical
+    // collections (glucose readings, medications, alerts, ...), bypassing PatientAccessService
+    // scoping entirely for anyone who can call GET /api/doctors (any authenticated role).
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Patient> patients = new ArrayList<>();
 
     @Column(updatable = false)

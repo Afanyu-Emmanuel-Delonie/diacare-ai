@@ -14,7 +14,6 @@ function CreateUser() {
     firstName: '',
     lastName: '',
     email: '',
-    phoneNumber: '',
     password: '',
     role: ROLES.PATIENT,
     status: 'ACTIVE'

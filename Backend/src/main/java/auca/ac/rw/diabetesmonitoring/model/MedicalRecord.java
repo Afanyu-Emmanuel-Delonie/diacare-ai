@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "medical_records")
+@Table(name = "medical_records", indexes = @Index(name = "idx_medical_records_patient_id", columnList = "patient_id"))
 public class MedicalRecord {
 
     @Id

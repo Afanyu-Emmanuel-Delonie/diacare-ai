@@ -14,31 +14,29 @@ export const activateUser = (id) => apiClient.patch(`/users/${id}/activate`);
 
 export const deleteUser = (id) => apiClient.delete(`/users/${id}`);
 
+// Only ACTIVE / INACTIVE / ARCHIVED are real, backend-supported states.
 export function getUserStatus(user) {
   if (user?.deleted) {
     return 'ARCHIVED';
   }
-
-  if (user?.locked) {
-    return 'LOCKED';
-  }
-
   return user?.active === false ? 'INACTIVE' : 'ACTIVE';
 }
 
+// The backend only ever persists username/email/role — there is no separate
+// display name. The username itself is the account's identity.
 export function getUserDisplayName(user) {
-  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim();
-  return fullName || user?.fullName || user?.name || user?.username || 'Unnamed user';
+  return user?.username || 'Unnamed user';
 }
 
+// First/last name are not persisted fields; they only exist as form inputs
+// used to generate a friendly username on create/edit (see buildUserPayload).
 export function getUserInitialFormData(user = {}) {
   const nameParts = String(user.username || '').split(/[._\s-]+/).filter(Boolean);
 
   return {
-    firstName: user.firstName || nameParts[0] || '',
-    lastName: user.lastName || nameParts.slice(1).join(' ') || '',
+    firstName: nameParts[0] || '',
+    lastName: nameParts.slice(1).join(' ') || '',
     email: user.email || '',
-    phoneNumber: user.phoneNumber || user.phone || '',
     password: '',
     role: user.role || 'PATIENT',
     status: getUserStatus(user)

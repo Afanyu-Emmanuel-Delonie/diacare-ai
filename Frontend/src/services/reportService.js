@@ -81,3 +81,18 @@ export async function downloadReportFile(reportId, format = 'JSON') {
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+
+export async function getClinicalReport(patientId, audience = 'Health Report') {
+  const response = await apiClient.get(`/reports/patient/${patientId}/clinical`, { params: { audience } });
+  return response.data;
+}
+
+export async function getGlucoseTrendReport(patientId, startDate, endDate) {
+  const response = await apiClient.get(`/reports/patient/${patientId}/glucose-trend`, { params: { startDate, endDate } });
+  return response.data;
+}
+
+export async function getMonthlyProgressReport(patientId, month) {
+  const response = await apiClient.get(`/reports/patient/${patientId}/monthly-progress`, { params: { month } });
+  return response.data;
+}

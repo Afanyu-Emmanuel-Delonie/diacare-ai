@@ -114,6 +114,31 @@ Examples:
 - Database credentials configured through environment variables
 - Least-privilege database user recommended instead of using the PostgreSQL superuser
 
+## Data Access Scoping (Row-Level Authorization)
+
+Authentication (`hasRole`/`hasAnyRole`) only decides whether a role can call an endpoint at all.
+On top of that, `PatientAccessService` decides *which patients' data* a given account may see or
+write, so a nurse can never read another nurse's patients even though both hold the `NURSE` role.
+
+Rules, enforced consistently across patients, glucose readings, appointments, medications,
+medical records, alerts, lab results, lifestyle activities, messages, risk predictions, and
+reports:
+
+| Role | Can access |
+|---|---|
+| **ADMIN** | Every patient and every record. |
+| **DOCTOR** | Patients assigned to them as primary doctor, plus any patient whose medical record they have personally created (creating a record — "pulling the chart" — is itself the access-granting action, e.g. for a covering or consulting doctor). |
+| **NURSE** | Only patients assigned to them. |
+| **CAREGIVER** | Only patients assigned to them. |
+| **PATIENT** | Only their own record. |
+
+A staff account with no linked domain profile, or with zero assignments, sees an **empty**
+list — it never falls back to "all patients". Every list endpoint filters by this scope, every
+single-resource endpoint (`GET/PUT/DELETE /{id}`) re-checks it against the record's owning
+patient, and every create endpoint validates the target `patientId` against it before saving,
+so a request naming a `patientId` outside the caller's scope is rejected with `403 Forbidden`
+rather than silently returning or writing data.
+
 ## How To Run The Project
 
 ### 1. Install Requirements
@@ -228,6 +253,11 @@ Authorization: Bearer <your-token>
 
 ## API Endpoint Summary
 
+> Every endpoint below that returns or accepts a `patientId` is scoped per the
+> [Data Access Scoping](#data-access-scoping-row-level-authorization) rules — "Yes" under JWT
+> Required means authenticated, not unrestricted; the caller's role and patient assignments
+> still determine which rows are visible or writable.
+
 ### Authentication
 
 | Method | Endpoint | Description | JWT Required |
@@ -337,13 +367,14 @@ Authorization: Bearer <your-token>
 
 ### Other Resource APIs
 
-The backend also includes CRUD endpoints for:
+The backend also includes CRUD endpoints for (all patient-scoped per the table above):
 
 - Doctors: `/api/doctors`
 - Lab results: `/api/lab-results`
 - Lifestyle activities: `/api/lifestyle-activities`
 - Medical records: `/api/medical-records`
 - Messages: `/api/messages`
+- Risk predictions: `/api/risk-predictions`
 - Users: `/api/users`
 
 ## Medical Safety Disclaimer

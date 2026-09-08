@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','CAREGIVER')")
 public class UserController {
 
@@ -50,5 +49,17 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> activateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponseDto.from(userService.activate(id)));
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> deactivateUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponseDto.from(userService.deactivate(id)));
     }
 }

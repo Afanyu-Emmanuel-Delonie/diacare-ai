@@ -6,13 +6,14 @@ import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/doctors")
-@CrossOrigin(origins = "*")
+@PreAuthorize("isAuthenticated()")
 public class DoctorController {
 
     private final DoctorRepository doctorRepository;
@@ -34,11 +35,13 @@ public class DoctorController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Doctor> createDoctor(@Valid @RequestBody Doctor doctor) {
         return new ResponseEntity<>(doctorRepository.save(doctor), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Doctor> updateDoctor(@PathVariable Long id, @Valid @RequestBody Doctor updatedDoctor) {
         return doctorRepository.findById(id)
                 .map(existing -> {
@@ -49,6 +52,7 @@ public class DoctorController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteDoctor(@PathVariable Long id) {
         return doctorRepository.findById(id)
                 .map(existing -> {

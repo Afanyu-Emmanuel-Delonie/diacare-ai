@@ -15,7 +15,7 @@ export const safeGuidanceExamples = [
   'Emergency-level risk may require urgent medical attention.'
 ];
 
-export const predictRisk = (payload) => apiClient.post('/alerts/risk-prediction', payload);
+export const predictRisk = (payload) => apiClient.post('/risk-predictions', payload);
 
 export const getRiskPredictions = async () => {
   const response = await apiClient.get('/risk-predictions');

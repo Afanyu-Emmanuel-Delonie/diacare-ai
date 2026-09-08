@@ -1,122 +1,68 @@
-import { useEffect, useState } from 'react';
-import Button from '../../../components/common/Button.jsx';
-import Card from '../../../components/common/Card.jsx';
-import Input from '../../../components/common/Input.jsx';
+import { useState } from 'react';
+import { MdBlock, MdErrorOutline, MdLock, MdLogin, MdWarning } from 'react-icons/md';
+import DashboardStatCell from '../../../components/dashboard/DashboardStatCell.jsx';
+import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSpinner from '../../../components/common/LoadingSpinner.jsx';
-import Table from '../../../components/common/Table.jsx';
 import useToast from '../../../hooks/useToast.js';
-import { getAdminSecurityAuditReport, getAuditLogs } from '../../../services/reportService.js';
+import { getAdminSecurityAuditReport } from '../../../services/reportService.js';
 import ActivitySection from '../../shared/reports/ActivitySection.jsx';
 import ReportFilters from '../../shared/reports/ReportFilters.jsx';
 
-const securitySections = [
-  ['Login Success', 'loginSuccess'],
-  ['Logout', 'logout'],
-  ['Failed Logins', 'failedLogins'],
-  ['Repeated Failed Logins', 'repeatedFailedLogins'],
-  ['Unauthorized Access', 'unauthorizedAccess'],
-  ['Admin Actions', 'adminActions'],
-  ['Patient Record Changes', 'patientRecordChanges'],
-  ['Medication Changes', 'medicationChanges'],
-  ['Appointment Changes', 'appointmentChanges'],
-  ['Report Downloads', 'reportDownloads'],
-  ['System Errors', 'systemErrors']
-];
+const METRIC_META = {
+  totalLoginAttempts: { label: 'Total Login Attempts', icon: MdLogin, color: '#2563EB' },
+  failedLogins: { label: 'Failed Logins', icon: MdWarning, color: '#D97706', urgent: true },
+  unauthorizedAccessAttempts: { label: 'Unauthorized Access', icon: MdBlock, color: '#DC2626', urgent: true },
+  accountLockouts: { label: 'Account Lockouts', icon: MdLock, color: '#DC2626', urgent: true },
+  systemErrors: { label: 'System Errors', icon: MdErrorOutline, color: '#64748B' },
+};
 
 function SecurityAuditReports() {
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({ search: '', startDate: '', endDate: '' });
   const [report, setReport] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { showToast } = useToast();
 
-  const updateFilter = (field, value) => setFilters((current) => ({ ...current, [field]: value }));
-
-  async function loadReport() {
+  const loadReport = (nextFilters) => {
     setLoading(true);
-    try {
-      const [reportData, logData] = await Promise.all([getAdminSecurityAuditReport(filters), getAuditLogs(filters)]);
-      setReport(reportData);
-      setLogs(logData);
-    } catch {
-      showToast({ type: 'error', message: 'Unable to load security audit report.' });
-    } finally {
-      setLoading(false);
-    }
-  }
+    setError('');
+    getAdminSecurityAuditReport(nextFilters)
+      .then(setReport)
+      .catch(() => {
+        setError('Unable to load the security audit report.');
+        showToast({ type: 'error', message: 'Unable to load the security audit report.' });
+      })
+      .finally(() => setLoading(false));
+  };
 
-  useEffect(() => {
-    loadReport();
-  }, []);
+  const metrics = Object.entries(report?.metrics || {});
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-2xl font-bold text-[#334155]">Security Audit Reports</h1>
-          <p className="mt-2 text-sm text-[#334155]/80">Login events, unauthorized access, report downloads, and system errors.</p>
-        </div>
-        <Button variant="secondary" onClick={() => window.print()}>
-          Printable view
-        </Button>
+      <div className="border-b border-[#E2E8F0] pb-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#D97706]">Security</p>
+        <h1 className="mt-1 text-2xl font-bold text-[#1e293b]">Security Audit Reports</h1>
+        <p className="mt-1 text-sm text-[#64748b]">Failed logins, unauthorized access attempts, and account lockouts.</p>
       </div>
 
-      <ReportFilters filters={filters} setFilters={setFilters} onApply={loadReport} onReset={() => setFilters({})} showRole />
+      <ReportFilters filters={filters} onChange={setFilters} onSubmit={loadReport} loading={loading} />
 
-      <Card>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Input label="Email" id="email" value={filters.email || ''} onChange={(event) => updateFilter('email', event.target.value)} />
-          <Input label="IP address" id="ip" value={filters.ip || ''} onChange={(event) => updateFilter('ip', event.target.value)} />
-          <div className="space-y-2">
-            <label htmlFor="status" className="block text-sm font-semibold text-[#334155]">
-              Status
-            </label>
-            <select
-              id="status"
-              className="min-h-11 w-full rounded-md border border-[#334155]/25 bg-[#FFFFFF] px-3 text-base text-[#334155]"
-              value={filters.status || ''}
-              onChange={(event) => updateFilter('status', event.target.value)}
-            >
-              <option value="">All statuses</option>
-              <option value="SUCCESS">Success</option>
-              <option value="FAILED">Failed</option>
-              <option value="DENIED">Denied</option>
-            </select>
-          </div>
-          <Input
-            label="Action type"
-            id="actionType"
-            value={filters.actionType || ''}
-            onChange={(event) => updateFilter('actionType', event.target.value)}
-          />
-        </div>
-      </Card>
-
-      {loading ? (
-        <LoadingSpinner label="Loading security audit report..." />
-      ) : (
+      {loading && <LoadingSpinner label="Loading security audit report..." />}
+      {!loading && error && <EmptyState title="Security audit report could not be loaded" message={error} />}
+      {!loading && !error && !report && (
+        <EmptyState title="No report generated yet" message="Use the filters above to generate a security audit report." />
+      )}
+      {!loading && !error && report && (
         <>
-          {securitySections.map(([title, key]) => (
-            <ActivitySection key={key} title={title} activities={report?.[key]} security />
-          ))}
-          <Card>
-            <h2 className="mb-4 text-lg font-bold text-[#334155]">Audit Logs</h2>
-            <Table
-              columns={[
-                { key: 'date', header: 'Date' },
-                { key: 'time', header: 'Time' },
-                { key: 'email', header: 'Email' },
-                { key: 'userRole', header: 'Role' },
-                { key: 'ipAddress', header: 'IP' },
-                { key: 'device', header: 'Device' },
-                { key: 'actionType', header: 'Action' },
-                { key: 'status', header: 'Status' },
-                { key: 'message', header: 'Message' }
-              ]}
-              data={logs}
-              emptyMessage="No data available for this section."
-            />
-          </Card>
+          {metrics.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {metrics.map(([key, value]) => {
+                const meta = METRIC_META[key] || { label: key, icon: MdErrorOutline, color: '#64748B' };
+                return <DashboardStatCell key={key} icon={meta.icon} label={meta.label} value={value} helper="" color={meta.color} urgent={meta.urgent} />;
+              })}
+            </div>
+          )}
+          <ActivitySection title="Security Events" items={report.events || []} emptyMessage="No security events in the selected period." />
         </>
       )}
     </div>

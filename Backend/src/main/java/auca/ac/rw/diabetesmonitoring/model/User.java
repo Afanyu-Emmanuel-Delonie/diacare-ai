@@ -36,6 +36,10 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    private Boolean active;
+
+    private Boolean deleted;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -45,6 +49,12 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (active == null) {
+            active = true;
+        }
+        if (deleted == null) {
+            deleted = false;
+        }
     }
 
     @PreUpdate
@@ -61,6 +71,10 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+    public Boolean getDeleted() { return deleted; }
+    public void setDeleted(Boolean deleted) { this.deleted = deleted; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

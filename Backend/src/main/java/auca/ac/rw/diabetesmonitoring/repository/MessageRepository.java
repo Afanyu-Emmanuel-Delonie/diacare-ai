@@ -4,9 +4,11 @@ import auca.ac.rw.diabetesmonitoring.model.Message;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByPatientId(Long patientId);
+    List<Message> findByPatientIdIn(Collection<Long> patientIds);
 }

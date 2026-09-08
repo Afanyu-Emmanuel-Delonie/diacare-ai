@@ -1,28 +1,47 @@
 package auca.ac.rw.diabetesmonitoring.service;
 
+import auca.ac.rw.diabetesmonitoring.dto.MedicationRequestDto;
 import auca.ac.rw.diabetesmonitoring.exception.ResourceNotFoundException;
 import auca.ac.rw.diabetesmonitoring.model.Medication;
+import auca.ac.rw.diabetesmonitoring.model.Patient;
 import auca.ac.rw.diabetesmonitoring.repository.MedicationRepository;
+import auca.ac.rw.diabetesmonitoring.repository.PatientRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class MedicationService {
 
     private final MedicationRepository medicationRepository;
+    private final PatientRepository patientRepository;
+    private final AuditLogService auditLogService;
+    private final AlertService alertService;
 
-    public MedicationService(MedicationRepository medicationRepository) {
+    public MedicationService(MedicationRepository medicationRepository, PatientRepository patientRepository,
+                              AuditLogService auditLogService, AlertService alertService) {
         this.medicationRepository = medicationRepository;
+        this.patientRepository = patientRepository;
+        this.auditLogService = auditLogService;
+        this.alertService = alertService;
     }
 
-    public Medication create(Medication medication) {
+    public Medication create(MedicationRequestDto request) {
+        Medication medication = new Medication();
+        applyRequest(medication, request);
         validate(medication);
-        return medicationRepository.save(medication);
+        Medication saved = medicationRepository.save(medication);
+        auditLogService.log("MEDICATION_CREATED", "SUCCESS", patientEmail(saved), "PATIENT", "Medication added: " + saved.getMedicationName());
+        return saved;
     }
 
     public List<Medication> getAll() {
         return medicationRepository.findAll();
+    }
+
+    public List<Medication> getByPatientId(Long patientId) {
+        return medicationRepository.findByPatientIdOrderByStartDateAsc(patientId);
     }
 
     public Medication getById(Long id) {
@@ -30,30 +49,62 @@ public class MedicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Medication not found with id: " + id));
     }
 
-    public Medication update(Long id, Medication updatedMedication) {
+    public Medication update(Long id, MedicationRequestDto request) {
         Medication existing = getById(id);
-        validate(updatedMedication);
-        existing.setMedicationName(updatedMedication.getMedicationName());
-        existing.setMedicationClass(updatedMedication.getMedicationClass());
-        existing.setPurpose(updatedMedication.getPurpose());
-        existing.setSuitableDiabetesType(updatedMedication.getSuitableDiabetesType());
-        existing.setTypicalTiming(updatedMedication.getTypicalTiming());
-        existing.setHowToUseGeneralInfo(updatedMedication.getHowToUseGeneralInfo());
-        existing.setCommonSideEffects(updatedMedication.getCommonSideEffects());
-        existing.setStorageInstructions(updatedMedication.getStorageInstructions());
-        existing.setMissedDoseGuidance(updatedMedication.getMissedDoseGuidance());
-        existing.setWarnings(updatedMedication.getWarnings());
-        existing.setDoctorPrescribedDose(updatedMedication.getDoctorPrescribedDose());
-        existing.setReminderSchedule(updatedMedication.getReminderSchedule());
-        existing.setAdherenceStatus(updatedMedication.getAdherenceStatus());
-        existing.setStartDate(updatedMedication.getStartDate());
-        existing.setEndDate(updatedMedication.getEndDate());
-        return medicationRepository.save(existing);
+        applyRequest(existing, request);
+        validate(existing);
+        Medication saved = medicationRepository.save(existing);
+        auditLogService.log("MEDICATION_UPDATED", "SUCCESS", patientEmail(saved), "PATIENT", "Medication updated: " + saved.getMedicationName());
+        return saved;
+    }
+
+    public Medication updateAdherence(Long id, String adherenceStatus) {
+        Medication existing = getById(id);
+        boolean wasAlreadyMissed = "MISSED".equalsIgnoreCase(existing.getAdherenceStatus());
+        existing.setAdherenceStatus(adherenceStatus);
+        existing.setLastAdherenceUpdatedAt(LocalDateTime.now());
+        Medication saved = medicationRepository.save(existing);
+
+        if ("MISSED".equalsIgnoreCase(adherenceStatus) && !wasAlreadyMissed && saved.getPatient() != null) {
+            alertService.raiseSystemAlert(saved.getPatient(),
+                    "Missed medication dose",
+                    saved.getMedicationName() + " was not confirmed as taken for " + saved.getPatient().getFullName() + ".",
+                    "MEDICATION_REMINDER", "WARNING", null);
+        }
+        return saved;
     }
 
     public void delete(Long id) {
         Medication existing = getById(id);
         medicationRepository.delete(existing);
+        auditLogService.log("MEDICATION_DELETED", "SUCCESS", patientEmail(existing), "PATIENT", "Medication deleted: " + existing.getMedicationName());
+    }
+
+    private String patientEmail(Medication medication) {
+        return medication.getPatient() == null ? null : medication.getPatient().getEmail();
+    }
+
+    private void applyRequest(Medication medication, MedicationRequestDto request) {
+        medication.setMedicationName(request.getMedicationName());
+        medication.setMedicationClass(request.getMedicationClass());
+        medication.setPurpose(request.getPurpose());
+        medication.setSuitableDiabetesType(request.getSuitableDiabetesType());
+        medication.setTypicalTiming(request.getTypicalTiming());
+        medication.setHowToUseGeneralInfo(request.getHowToUseGeneralInfo());
+        medication.setCommonSideEffects(request.getCommonSideEffects());
+        medication.setStorageInstructions(request.getStorageInstructions());
+        medication.setMissedDoseGuidance(request.getMissedDoseGuidance());
+        medication.setWarnings(request.getWarnings());
+        medication.setDoctorPrescribedDose(request.getDoctorPrescribedDose());
+        medication.setReminderSchedule(request.getReminderSchedule());
+        medication.setAdherenceStatus(request.getAdherenceStatus());
+        medication.setStartDate(request.getStartDate());
+        medication.setEndDate(request.getEndDate());
+        if (request.getPatientId() != null) {
+            Patient patient = patientRepository.findById(request.getPatientId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + request.getPatientId()));
+            medication.setPatient(patient);
+        }
     }
 
     private void validate(Medication medication) {
@@ -65,6 +116,9 @@ public class MedicationService {
         }
         if (medication.getStartDate() == null) {
             throw new IllegalArgumentException("Start date is required");
+        }
+        if (medication.getPatient() == null) {
+            throw new IllegalArgumentException("Patient is required");
         }
     }
 }

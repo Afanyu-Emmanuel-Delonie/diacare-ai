@@ -7,9 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "medications")
+@Table(name = "medications", indexes = @Index(name = "idx_medications_patient_id", columnList = "patient_id"))
 public class Medication {
 
     @Id
@@ -62,6 +63,8 @@ public class Medication {
 
     private LocalDate endDate;
 
+    private LocalDateTime lastAdherenceUpdatedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")
     @JsonIgnore
@@ -98,6 +101,8 @@ public class Medication {
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public LocalDateTime getLastAdherenceUpdatedAt() { return lastAdherenceUpdatedAt; }
+    public void setLastAdherenceUpdatedAt(LocalDateTime lastAdherenceUpdatedAt) { this.lastAdherenceUpdatedAt = lastAdherenceUpdatedAt; }
     public Patient getPatient() { return patient; }
     public void setPatient(Patient patient) { this.patient = patient; }
 }

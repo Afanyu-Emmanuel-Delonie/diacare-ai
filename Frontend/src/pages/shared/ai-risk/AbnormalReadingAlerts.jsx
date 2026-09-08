@@ -3,12 +3,14 @@ import { MdWarning, MdSearch, MdArrowBack } from 'react-icons/md';
 import { Link } from 'react-router-dom';
 import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSkeleton from '../../../components/common/LoadingSkeleton.jsx';
+import useAuth from '../../../hooks/useAuth.js';
 import useToast from '../../../hooks/useToast.js';
 import {
   filterRiskPredictions, getRiskPredictions,
   isAbnormalReading, safeRiskText,
 } from '../../../services/riskPredictionService.js';
 import { getApiErrorMessage } from '../../../utils/apiErrors.js';
+import { ROLES } from '../../../utils/roles.js';
 import RiskLevelBadge from './RiskLevelBadge.jsx';
 import RiskSafetyNotice from './RiskSafetyNotice.jsx';
 import { formatDateTime } from './riskPageUtils.js';
@@ -18,7 +20,7 @@ const RISK_COLOR = { LOW_RISK: '#10B981', MODERATE_RISK: '#F59E0B', HIGH_RISK: '
 function AlertCard({ prediction }) {
   const color = RISK_COLOR[prediction.riskLevel] || '#F59E0B';
   return (
-    <div className="rounded-xl border p-4 shadow-sm" style={{ borderColor: `${color}30`, background: `${color}08` }}>
+    <div className="rounded-xl border p-4" style={{ borderColor: `${color}30`, background: `${color}08` }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${color}18` }}>
@@ -53,6 +55,8 @@ function AlertCard({ prediction }) {
 
 function AbnormalReadingAlerts() {
   const { showToast } = useToast();
+  const { userRole } = useAuth();
+  const isPatient = userRole === ROLES.PATIENT;
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -88,10 +92,12 @@ function AbnormalReadingAlerts() {
 
       <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/30 bg-[#FEF3C7] px-4 py-3 text-sm text-[#92400e]">
         <MdWarning size={18} className="text-[#F59E0B] shrink-0" />
-        Your reading appears outside the expected range. Please follow your healthcare provider's advice.
+        {isPatient
+          ? "Your reading appears outside the expected range. Please follow your healthcare provider's advice."
+          : 'Review each abnormal reading below and follow up with the patient as needed.'}
       </div>
 
-      <div className="flex items-center gap-2 rounded-xl border border-[#334155]/10 bg-white px-3 py-2 shadow-sm">
+      <div className="flex items-center gap-2 rounded-xl border border-[#334155]/10 bg-white px-3 py-2">
         <MdSearch size={16} className="text-[#94a3b8]" />
         <input type="text" placeholder="Search patient or explanation..."
           value={search} onChange={(e) => setSearch(e.target.value)}

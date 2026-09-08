@@ -83,7 +83,6 @@ function buildNav(role) {
         { label: 'All Medications', path: '/dashboard/medications' },
         { label: 'Schedule',        path: '/dashboard/medications/schedule' },
         { label: 'Adherence',       path: '/dashboard/medications/adherence' },
-        { label: 'Missed Alerts',   path: '/dashboard/medications/missed-alerts' },
       ],
     },
     {
@@ -97,21 +96,14 @@ function buildNav(role) {
     {
       label: 'AI Risk',
       icon: MdPsychology,
-      children: [
-        { label: 'Risk Prediction',   path: '/dashboard/ai-risk' },
-        { label: 'Patient Summary',   path: '/dashboard/ai-risk/patient-summary' },
-        { label: 'History',           path: '/dashboard/ai-risk/history' },
-        { label: 'Abnormal Alerts',   path: '/dashboard/ai-risk/abnormal-alerts' },
-        { label: 'Emergency View',    path: '/dashboard/ai-risk/emergency' },
-      ],
+      path: '/dashboard/ai-risk',
+      single: true,
     },
     {
       label: 'Reports',
       icon: MdBarChart,
-      children: [
-        { label: 'History',   path: '/dashboard/reports/history' },
-        { label: 'Downloads', path: '/dashboard/reports/download' },
-      ],
+      path: '/dashboard/reports',
+      single: true,
     },
     {
       label: 'Knowledge Base',

@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import Badge from '../../../components/common/Badge.jsx';
+import { Link, useParams } from 'react-router-dom';
+import { MdArrowBack } from 'react-icons/md';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import ConfirmDialog from '../../../components/common/ConfirmDialog.jsx';
 import EmptyState from '../../../components/common/EmptyState.jsx';
 import LoadingSpinner from '../../../components/common/LoadingSpinner.jsx';
+import StatusBadge from '../../../components/common/StatusBadge.jsx';
+import UserRoleBadge from '../../../components/admin/UserRoleBadge.jsx';
+import useUserStatusActions from '../../../hooks/useUserStatusActions.js';
 import useToast from '../../../hooks/useToast.js';
-import { activateUser, deleteUser, deactivateUser, getUser, getUserDisplayName, getUserInitialFormData, getUserStatus } from '../../../services/userService.js';
+import { getUser, getUserDisplayName, getUserStatus } from '../../../services/userService.js';
 import { getApiErrorMessage } from '../../../utils/apiErrors.js';
 
 function UserDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [dialog, setDialog] = useState({ open: false, type: '' });
 
   const loadUser = async () => {
     setLoading(true);
@@ -39,29 +40,7 @@ function UserDetails() {
     loadUser();
   }, [id]);
 
-  const handleConfirmedAction = async () => {
-    try {
-      if (dialog.type === 'delete') {
-        await deleteUser(id);
-        showToast({ type: 'success', message: 'User archived successfully where allowed.' });
-        navigate('/dashboard/admin/users');
-      } else if (dialog.type === 'deactivate') {
-        await deactivateUser(id);
-        showToast({ type: 'success', message: 'User deactivated successfully.' });
-        setDialog({ open: false, type: '' });
-        await loadUser();
-      } else {
-        await activateUser(id);
-        showToast({ type: 'success', message: 'User activated successfully.' });
-        setDialog({ open: false, type: '' });
-        await loadUser();
-      }
-    } catch (requestError) {
-      const message = getApiErrorMessage(requestError, 'User action failed.');
-      showToast({ type: 'error', message });
-      setDialog({ open: false, type: '' });
-    }
-  };
+  const { openDialog, dialogProps } = useUserStatusActions(loadUser);
 
   if (loading) {
     return <LoadingSpinner label="Loading user details..." />;
@@ -72,61 +51,60 @@ function UserDetails() {
   }
 
   const status = getUserStatus(user);
-  const userFormData = getUserInitialFormData(user);
+  const name = getUserDisplayName(user);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#334155]">{getUserDisplayName(user)}</h1>
-          <p className="mt-1 text-[#334155]/80">{user.email}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link to={`/dashboard/admin/users/${user.id}/edit`}>
-            <Button variant="secondary">Edit</Button>
-          </Link>
-          <Button variant="warning" disabled={!user.active || user.deleted} onClick={() => setDialog({ open: true, type: 'deactivate' })}>
-            Deactivate
-          </Button>
-          <Button variant="success" disabled={user.active || user.deleted || user.locked} onClick={() => setDialog({ open: true, type: 'activate' })}>
-            Activate
-          </Button>
-          <Button variant="critical" disabled={user.deleted} onClick={() => setDialog({ open: true, type: 'delete' })}>
-            Archive
-          </Button>
+      <Link to="/dashboard/admin/users" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#2563EB] hover:text-[#1d4ed8]">
+        <MdArrowBack size={16} /> Back to users
+      </Link>
+
+      <div className="rounded-xl border border-[#E2E8F0] bg-white p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#2563EB]/10 text-xl font-bold text-[#2563EB]">
+              {user.username?.[0]?.toUpperCase() || '?'}
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={status} />
+                <UserRoleBadge role={user.role} />
+              </div>
+              <h1 className="mt-2 text-2xl font-bold text-[#1e293b]">{name}</h1>
+              <p className="mt-0.5 text-sm text-[#64748b]">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Link to={`/dashboard/admin/users/${user.id}/edit`}>
+              <Button variant="secondary">Edit</Button>
+            </Link>
+            <Button variant="warning" disabled={!user.active || user.deleted} onClick={() => openDialog('deactivate', user)}>
+              Deactivate
+            </Button>
+            <Button variant="success" disabled={user.active || user.deleted} onClick={() => openDialog('activate', user)}>
+              Activate
+            </Button>
+            <Button variant="critical" disabled={user.deleted} onClick={() => openDialog('delete', user)}>
+              Archive
+            </Button>
+          </div>
         </div>
       </div>
 
       <Card>
-        <dl className="grid gap-5 md:grid-cols-2">
-          <Detail label="First Name" value={user.firstName || userFormData.firstName || 'Not available'} />
-          <Detail label="Last Name" value={user.lastName || userFormData.lastName || 'Not available'} />
+        <h2 className="text-base font-semibold text-[#334155]">Account Information</h2>
+        <dl className="mt-5 grid gap-5 md:grid-cols-2">
           <Detail label="Username" value={user.username} />
           <Detail label="Email" value={user.email} />
-          <Detail label="Phone Number" value={user.phoneNumber || user.phone || 'Not available'} />
-          <Detail label="Role" value={<Badge variant="info">{user.role}</Badge>} />
-          <Detail label="Status" value={<Badge variant={status === 'ACTIVE' ? 'success' : status === 'INACTIVE' ? 'warning' : 'critical'}>{status}</Badge>} />
-          <Detail label="Created Date" value={formatDate(user.createdAt)} />
-          <Detail label="Last Login" value={formatDate(user.lastLogin || user.lastLoginAt)} />
-          <Detail label="Updated Date" value={formatDate(user.updatedAt)} />
+          <Detail label="Role" value={<UserRoleBadge role={user.role} />} />
+          <Detail label="Status" value={<StatusBadge status={status} />} />
+          <Detail label="Created" value={formatDate(user.createdAt)} />
+          <Detail label="Last Updated" value={formatDate(user.updatedAt)} />
         </dl>
       </Card>
 
-      <ConfirmDialog
-        open={dialog.open}
-        title={dialog.type === 'delete' ? 'Archive user' : dialog.type === 'activate' ? 'Activate user' : 'Deactivate user'}
-        message={
-          dialog.type === 'delete'
-            ? `Archive ${getUserDisplayName(user)} where allowed?`
-            : dialog.type === 'activate'
-              ? `Activate ${getUserDisplayName(user)}?`
-              : `Deactivate ${getUserDisplayName(user)}?`
-        }
-        confirmLabel={dialog.type === 'delete' ? 'Archive' : dialog.type === 'activate' ? 'Activate' : 'Deactivate'}
-        confirmVariant={dialog.type === 'activate' ? 'success' : 'critical'}
-        onConfirm={handleConfirmedAction}
-        onCancel={() => setDialog({ open: false, type: '' })}
-      />
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }
@@ -134,8 +112,8 @@ function UserDetails() {
 function Detail({ label, value }) {
   return (
     <div>
-      <dt className="text-sm font-semibold text-[#334155]/70">{label}</dt>
-      <dd className="mt-1 text-base font-semibold text-[#334155]">{value}</dd>
+      <dt className="text-xs font-medium text-[#94A3B8]">{label}</dt>
+      <dd className="mt-0.5 text-sm font-semibold text-[#334155]">{value}</dd>
     </div>
   );
 }

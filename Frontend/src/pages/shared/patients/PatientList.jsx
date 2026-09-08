@@ -21,6 +21,11 @@ import { ROLES } from '../../../utils/roles.js';
 const diabetesTypes = ['ALL', 'TYPE_1', 'TYPE_2', 'GESTATIONAL', 'PREDIABETES', 'OTHER'];
 const statuses = ['ALL', 'ACTIVE', 'INACTIVE', 'ARCHIVED'];
 
+function getInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
+}
+
 function PatientList() {
   const navigate = useNavigate();
   const { userRole } = useAuth();
@@ -112,16 +117,22 @@ function PatientList() {
     }
   };
 
-  const columns = [
-    { key: 'patientCode', header: 'Patient ID', render: (patient) => patient.patientCode || 'Not available' },
+  // Table is intentionally condensed to the essentials for fast scanning;
+  // everything else (contact info, emergency contact, timestamps) lives on the details page.
+  const columns = useMemo(() => [
     {
       key: 'fullName',
       header: 'Patient',
       render: (patient) => (
-        <div>
-          <p className="font-semibold text-[#334155]">{getPatientDisplayName(patient)}</p>
-          <p className="text-xs text-[#334155]/70">{patient.email}</p>
-        </div>
+        <Link to={`/dashboard/patients/${patient.id}`} className="group flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2563EB]/10 text-xs font-bold text-[#2563EB]">
+            {getInitials(getPatientDisplayName(patient))}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate font-semibold text-[#334155] group-hover:text-[#2563EB]">{getPatientDisplayName(patient)}</span>
+            <span className="block truncate text-xs text-[#94a3b8]">{patient.patientCode || patient.email || 'Not available'}</span>
+          </span>
+        </Link>
       ),
       sortValue: (patient) => getPatientDisplayName(patient)
     },
@@ -130,8 +141,6 @@ function PatientList() {
       header: 'Diabetes Type',
       render: (patient) => <Badge variant="info">{patient.diabetesType || 'Not specified'}</Badge>
     },
-    { key: 'phone', header: 'Contact', render: (patient) => patient.phone || patient.email || 'Not provided' },
-    { key: 'emergencyContactPhone', header: 'Emergency Contact', render: (patient) => patient.emergencyContactPhone || 'Not provided' },
     { key: 'doctorName', header: 'Doctor Assigned', render: (patient) => patient.doctorName || 'Not assigned' },
     {
       key: 'status',
@@ -154,14 +163,14 @@ function PatientList() {
         ]} />
       )
     }
-  ];
+  ], [canDeactivate, canDelete, canEdit, navigate]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[#E2E8F0] pb-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#334155]">{isCaregiver ? 'My Patients' : 'Patients'}</h1>
-          <p className="mt-1 text-[#334155]/80">
+          <h1 className="text-2xl font-bold text-[#1e293b]">{isCaregiver ? 'My Patients' : 'Patients'}</h1>
+          <p className="mt-1 text-sm text-[#64748b]">
             {isCaregiver
               ? 'View the patients assigned to your care and open their monitoring, medications, appointments, and alerts.'
               : 'Manage patient profiles according to your assigned access.'}

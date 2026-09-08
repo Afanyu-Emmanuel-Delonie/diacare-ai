@@ -2,7 +2,13 @@ package auca.ac.rw.diabetesmonitoring.service;
 
 import auca.ac.rw.diabetesmonitoring.dto.UserRequestDto;
 import auca.ac.rw.diabetesmonitoring.exception.ResourceNotFoundException;
+import auca.ac.rw.diabetesmonitoring.model.Caregiver;
+import auca.ac.rw.diabetesmonitoring.model.Doctor;
+import auca.ac.rw.diabetesmonitoring.model.Nurse;
 import auca.ac.rw.diabetesmonitoring.model.User;
+import auca.ac.rw.diabetesmonitoring.repository.CaregiverRepository;
+import auca.ac.rw.diabetesmonitoring.repository.DoctorRepository;
+import auca.ac.rw.diabetesmonitoring.repository.NurseRepository;
 import auca.ac.rw.diabetesmonitoring.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,11 +22,21 @@ public class UserService {
     private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "DOCTOR", "NURSE", "PATIENT", "CAREGIVER");
 
     private final UserRepository userRepository;
+    private final DoctorRepository doctorRepository;
+    private final NurseRepository nurseRepository;
+    private final CaregiverRepository caregiverRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, DoctorRepository doctorRepository,
+                        NurseRepository nurseRepository, CaregiverRepository caregiverRepository,
+                        PasswordEncoder passwordEncoder, AuditLogService auditLogService) {
         this.userRepository = userRepository;
+        this.doctorRepository = doctorRepository;
+        this.nurseRepository = nurseRepository;
+        this.caregiverRepository = caregiverRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditLogService = auditLogService;
     }
 
     public User create(UserRequestDto request) {
@@ -29,7 +45,60 @@ public class UserService {
         ensureUniqueUsernameAndEmail(user);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(user.getRole().toUpperCase());
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        createLinkedProfile(saved);
+        auditLogService.log("USER_CREATED", "SUCCESS", saved.getEmail(), saved.getRole(), "Account created with role " + saved.getRole());
+        return saved;
+    }
+
+    /**
+     * Staff roles (DOCTOR/NURSE/CAREGIVER) need a matching domain profile so they can be
+     * assigned to patients and counted correctly in reports. Skips creation if a profile
+     * with this email already exists (e.g. re-linking an existing account).
+     */
+    private void createLinkedProfile(User user) {
+        String displayName = deriveDisplayName(user.getUsername());
+        switch (user.getRole()) {
+            case "DOCTOR" -> {
+                if (doctorRepository.findByEmail(user.getEmail()).isEmpty()) {
+                    Doctor doctor = new Doctor();
+                    doctor.setFullName(displayName);
+                    doctor.setEmail(user.getEmail());
+                    doctor.setSpecialty("General Practice");
+                    doctorRepository.save(doctor);
+                }
+            }
+            case "NURSE" -> {
+                if (nurseRepository.findByEmail(user.getEmail()).isEmpty()) {
+                    Nurse nurse = new Nurse();
+                    nurse.setFullName(displayName);
+                    nurse.setEmail(user.getEmail());
+                    nurse.setDepartment("General");
+                    nurseRepository.save(nurse);
+                }
+            }
+            case "CAREGIVER" -> {
+                if (caregiverRepository.findByEmail(user.getEmail()).isEmpty()) {
+                    Caregiver caregiver = new Caregiver();
+                    caregiver.setFullName(displayName);
+                    caregiver.setEmail(user.getEmail());
+                    caregiver.setRelationship("Family");
+                    caregiverRepository.save(caregiver);
+                }
+            }
+            default -> { /* no linked profile for ADMIN / PATIENT */ }
+        }
+    }
+
+    private String deriveDisplayName(String username) {
+        String[] parts = username.split("[._\\-\\s]+");
+        StringBuilder name = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank()) continue;
+            if (!name.isEmpty()) name.append(' ');
+            name.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return name.isEmpty() ? username : name.toString();
     }
 
     public List<User> getAll() {
@@ -45,18 +114,47 @@ public class UserService {
         User existing = getById(id);
         User updatedUser = toUser(request);
         validate(updatedUser);
+        String previousRole = existing.getRole();
         existing.setUsername(updatedUser.getUsername());
         existing.setEmail(updatedUser.getEmail());
         if (updatedUser.getPassword() != null && !updatedUser.getPassword().isBlank()) {
             existing.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
         }
         existing.setRole(updatedUser.getRole().toUpperCase());
-        return userRepository.save(existing);
+        User saved = userRepository.save(existing);
+        if (!saved.getRole().equals(previousRole)) {
+            auditLogService.log("USER_ROLE_CHANGED", "SUCCESS", saved.getEmail(), saved.getRole(),
+                    "Role changed from " + previousRole + " to " + saved.getRole());
+        } else {
+            auditLogService.log("ADMIN_ACTION", "SUCCESS", saved.getEmail(), saved.getRole(), "Account details updated");
+        }
+        return saved;
     }
 
     public void delete(Long id) {
+        // Soft-archive rather than a hard delete, so account history is preserved.
         User existing = getById(id);
-        userRepository.delete(existing);
+        existing.setDeleted(true);
+        existing.setActive(false);
+        userRepository.save(existing);
+        auditLogService.log("USER_DELETED", "SUCCESS", existing.getEmail(), existing.getRole(), "Account archived");
+    }
+
+    public User activate(Long id) {
+        User existing = getById(id);
+        existing.setActive(true);
+        existing.setDeleted(false);
+        User saved = userRepository.save(existing);
+        auditLogService.log("USER_ACTIVATED", "SUCCESS", saved.getEmail(), saved.getRole(), "Account activated");
+        return saved;
+    }
+
+    public User deactivate(Long id) {
+        User existing = getById(id);
+        existing.setActive(false);
+        User saved = userRepository.save(existing);
+        auditLogService.log("USER_DEACTIVATED", "SUCCESS", saved.getEmail(), saved.getRole(), "Account deactivated");
+        return saved;
     }
 
     private User toUser(UserRequestDto request) {

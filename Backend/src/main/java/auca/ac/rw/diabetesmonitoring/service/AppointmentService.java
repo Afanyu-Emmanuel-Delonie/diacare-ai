@@ -1,24 +1,39 @@
 package auca.ac.rw.diabetesmonitoring.service;
 
+import auca.ac.rw.diabetesmonitoring.dto.AppointmentRequestDto;
 import auca.ac.rw.diabetesmonitoring.exception.ResourceNotFoundException;
 import auca.ac.rw.diabetesmonitoring.model.Appointment;
+import auca.ac.rw.diabetesmonitoring.model.Doctor;
+import auca.ac.rw.diabetesmonitoring.model.Patient;
+import auca.ac.rw.diabetesmonitoring.model.User;
 import auca.ac.rw.diabetesmonitoring.repository.AppointmentRepository;
+import auca.ac.rw.diabetesmonitoring.repository.DoctorRepository;
+import auca.ac.rw.diabetesmonitoring.repository.PatientRepository;
+import auca.ac.rw.diabetesmonitoring.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
+    private final AlertService alertService;
 
-    public AppointmentService(AppointmentRepository appointmentRepository) {
+    public AppointmentService(AppointmentRepository appointmentRepository, PatientRepository patientRepository,
+                               DoctorRepository doctorRepository, UserRepository userRepository,
+                               AuditLogService auditLogService, AlertService alertService) {
         this.appointmentRepository = appointmentRepository;
-    }
-
-    public Appointment create(Appointment appointment) {
-        validate(appointment);
-        return appointmentRepository.save(appointment);
+        this.patientRepository = patientRepository;
+        this.doctorRepository = doctorRepository;
+        this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
+        this.alertService = alertService;
     }
 
     public List<Appointment> getAll() {
@@ -30,25 +45,106 @@ public class AppointmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
     }
 
-    public Appointment update(Long id, Appointment updatedAppointment) {
+    public List<Appointment> getByPatientId(Long patientId) {
+        return appointmentRepository.findByPatientIdOrderByScheduledAtDesc(patientId);
+    }
+
+    public Appointment create(AppointmentRequestDto request, String principalName) {
+        Appointment appointment = new Appointment();
+        applyRequest(appointment, request, principalName);
+        appointment.setStatus(request.getStatus() != null && !request.getStatus().isBlank() ? request.getStatus() : "UPCOMING");
+        Appointment saved = appointmentRepository.save(appointment);
+        auditLogService.log("APPOINTMENT_CREATED", "SUCCESS", patientEmail(saved), "PATIENT", "Appointment scheduled for " + saved.getScheduledAt());
+
+        if (saved.getPatient() != null && saved.getScheduledAt() != null) {
+            LocalDateTime reminderAt = saved.getReminderAt() != null ? saved.getReminderAt() : saved.getScheduledAt().minusHours(24);
+            alertService.raiseSystemAlert(saved.getPatient(),
+                    "Upcoming appointment reminder",
+                    "An appointment is scheduled for " + saved.getScheduledAt() + ".",
+                    "APPOINTMENT_REMINDER", "INFO", reminderAt);
+        }
+        return saved;
+    }
+
+    public Appointment update(Long id, AppointmentRequestDto request) {
         Appointment existing = getById(id);
-        validate(updatedAppointment);
-        existing.setScheduledAt(updatedAppointment.getScheduledAt());
-        existing.setStatus(updatedAppointment.getStatus());
+        applyRequest(existing, request, null);
+        if (request.getStatus() != null && !request.getStatus().isBlank()) {
+            existing.setStatus(request.getStatus());
+        }
+        Appointment saved = appointmentRepository.save(existing);
+        auditLogService.log("APPOINTMENT_UPDATED", "SUCCESS", patientEmail(saved), "PATIENT", "Appointment updated");
+        return saved;
+    }
+
+    public Appointment updateStatus(Long id, String status) {
+        Appointment existing = getById(id);
+        existing.setStatus(status);
+        return appointmentRepository.save(existing);
+    }
+
+    public Appointment cancel(Long id) {
+        return updateStatus(id, "CANCELLED");
+    }
+
+    public Appointment reschedule(Long id, LocalDateTime scheduledAt, LocalDateTime reminderAt) {
+        Appointment existing = getById(id);
+        existing.setScheduledAt(scheduledAt);
+        if (reminderAt != null) {
+            existing.setReminderAt(reminderAt);
+        }
+        existing.setStatus("UPCOMING");
         return appointmentRepository.save(existing);
     }
 
     public void delete(Long id) {
         Appointment existing = getById(id);
         appointmentRepository.delete(existing);
+        auditLogService.log("APPOINTMENT_DELETED", "SUCCESS", patientEmail(existing), "PATIENT", "Appointment deleted");
     }
 
-    private void validate(Appointment appointment) {
-        if (appointment.getScheduledAt() == null) {
-            throw new IllegalArgumentException("Appointment date is required");
+    private String patientEmail(Appointment appointment) {
+        return appointment.getPatient() == null ? null : appointment.getPatient().getEmail();
+    }
+
+    private void applyRequest(Appointment appointment, AppointmentRequestDto request, String principalName) {
+        appointment.setScheduledAt(request.getScheduledAt());
+        appointment.setAppointmentType(request.getAppointmentType());
+        appointment.setLocation(request.getLocation());
+        appointment.setReason(request.getReason());
+        appointment.setNotes(request.getNotes());
+        appointment.setReminderAt(request.getReminderAt());
+
+        if (request.getPatientId() != null) {
+            appointment.setPatient(resolvePatientById(request.getPatientId()));
+        } else if (appointment.getPatient() == null && principalName != null) {
+            appointment.setPatient(resolvePatientBySelf(principalName));
         }
-        if (appointment.getStatus() == null || appointment.getStatus().isBlank()) {
-            throw new IllegalArgumentException("Appointment status is required");
+
+        if (request.getDoctorId() != null) {
+            appointment.setDoctor(doctorRepository.findById(request.getDoctorId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + request.getDoctorId())));
+        } else if (appointment.getDoctor() == null && principalName != null) {
+            resolveDoctorFromPrincipal(principalName).ifPresent(appointment::setDoctor);
         }
+    }
+
+    private Patient resolvePatientById(Long patientId) {
+        return patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found with id: " + patientId));
+    }
+
+    private Patient resolvePatientBySelf(String principalName) {
+        User user = userRepository.findByUsername(principalName)
+                .or(() -> userRepository.findByEmail(principalName))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + principalName));
+        return patientRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No patient profile is linked to this account."));
+    }
+
+    private java.util.Optional<Doctor> resolveDoctorFromPrincipal(String principalName) {
+        return userRepository.findByUsername(principalName)
+                .or(() -> userRepository.findByEmail(principalName))
+                .flatMap(user -> doctorRepository.findByEmail(user.getEmail()));
     }
 }

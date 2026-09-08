@@ -17,23 +17,10 @@ function UserForm({ title, description, formData, onChange, onSubmit, submitting
           <Input id="lastName" name="lastName" label="Last name" value={formData.lastName} onChange={onChange} minLength={2} />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Input id="email" name="email" label="Email" type="email" value={formData.email} onChange={onChange} required />
-          <Input id="phoneNumber" name="phoneNumber" label="Phone number" type="tel" value={formData.phoneNumber} onChange={onChange} placeholder="+250..." />
-        </div>
+        <p className="text-xs text-[#334155]/60">First and last name are used to generate this account's login username.</p>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Input
-            id="password"
-            name="password"
-            label={passwordRequired ? 'Password' : 'New password'}
-            type="password"
-            value={formData.password}
-            onChange={onChange}
-            minLength={8}
-            required={passwordRequired}
-            placeholder={passwordRequired ? '' : 'Leave blank to keep current password'}
-          />
+          <Input id="email" name="email" label="Email" type="email" value={formData.email} onChange={onChange} required />
           <div className="space-y-2">
             <label htmlFor="role" className="block text-sm font-semibold text-[#334155]">
               Role
@@ -54,6 +41,18 @@ function UserForm({ title, description, formData, onChange, onSubmit, submitting
             </select>
           </div>
         </div>
+
+        <Input
+          id="password"
+          name="password"
+          label={passwordRequired ? 'Password' : 'New password'}
+          type="password"
+          value={formData.password}
+          onChange={onChange}
+          minLength={8}
+          required={passwordRequired}
+          placeholder={passwordRequired ? '' : 'Leave blank to keep current password'}
+        />
 
         {showStatus && (
           <div className="space-y-2">
