@@ -79,10 +79,6 @@ public class Patient {
     @JsonIgnore
     private Caregiver caregiver;
 
-    // None of these back-reference collections are ever serialized: every controller returns a
-    // hand-built response DTO instead of a raw Patient, and this is the defense-in-depth backstop
-    // for that convention - see Doctor.patients for the leak this exact pattern caused when it
-    // was missing on an inverse @OneToMany that WAS reachable through a raw entity response.
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<GlucoseReading> glucoseReadings = new ArrayList<>();

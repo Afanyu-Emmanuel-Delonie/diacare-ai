@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RiskPredictionPersistenceService {
@@ -18,13 +19,16 @@ public class RiskPredictionPersistenceService {
     private final RiskPredictionRepository riskPredictionRepository;
     private final PatientRepository patientRepository;
     private final RiskPredictionService riskPredictionService;
+    private final MlRiskPredictionClient mlRiskPredictionClient;
     private final AlertService alertService;
 
     public RiskPredictionPersistenceService(RiskPredictionRepository riskPredictionRepository, PatientRepository patientRepository,
-                                             RiskPredictionService riskPredictionService, AlertService alertService) {
+                                             RiskPredictionService riskPredictionService, MlRiskPredictionClient mlRiskPredictionClient,
+                                             AlertService alertService) {
         this.riskPredictionRepository = riskPredictionRepository;
         this.patientRepository = patientRepository;
         this.riskPredictionService = riskPredictionService;
+        this.mlRiskPredictionClient = mlRiskPredictionClient;
         this.alertService = alertService;
     }
 
@@ -32,8 +36,13 @@ public class RiskPredictionPersistenceService {
         LocalDateTime measuredAt = request.getMeasuredAt() != null ? request.getMeasuredAt() : LocalDateTime.now();
         List<Double> recentReadings = request.getRecentReadings() != null ? request.getRecentReadings() : List.of();
 
-        RiskPredictionResult result = riskPredictionService.analyzeRisk(
+        Optional<RiskPredictionResult> mlResult = mlRiskPredictionClient.predict(
                 request.getCurrentReading(), measuredAt, recentReadings, request.isMedicationAdherenceMissed(), request.getHba1cResult());
+
+        RiskPredictionResult result = mlResult.orElseGet(() -> riskPredictionService.analyzeRisk(
+                request.getCurrentReading(), measuredAt, recentReadings, request.isMedicationAdherenceMissed(), request.getHba1cResult()));
+
+        result = applyEmergencySafetyFloor(request.getCurrentReading(), result);
 
         RiskPrediction prediction = new RiskPrediction();
         prediction.setReading(request.getCurrentReading());
@@ -50,6 +59,23 @@ public class RiskPredictionPersistenceService {
         }
 
         return riskPredictionRepository.save(prediction);
+    }
+
+    /**
+     * A severely abnormal reading is always EMERGENCY_RISK, regardless of what the ML model or
+     * rule-based classifier decided - this mirrors the ML service's own hard floor so the
+     * guarantee holds even if the ML service's result is the one being used.
+     */
+    private RiskPredictionResult applyEmergencySafetyFloor(Double currentReading, RiskPredictionResult result) {
+        if (currentReading == null) {
+            return result;
+        }
+        boolean clinicalEmergency = currentReading < 54 || currentReading > 300;
+        if (clinicalEmergency && !"EMERGENCY_RISK".equals(result.getRiskCategory())) {
+            String message = RiskPredictionService.buildAlertMessage("EMERGENCY_RISK", result.getTriggeredSignals());
+            return new RiskPredictionResult("EMERGENCY_RISK", result.getTriggeredSignals(), message);
+        }
+        return result;
     }
 
     /** LOW_RISK never alerts — only a flagged reading is worth surfacing as a notification. */

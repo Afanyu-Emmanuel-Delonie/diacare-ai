@@ -86,7 +86,7 @@ public class RiskPredictionService {
         return "LOW_RISK";
     }
 
-    private String buildAlertMessage(String riskCategory, List<String> signals) {
+    static String buildAlertMessage(String riskCategory, List<String> signals) {
         StringBuilder message = new StringBuilder();
         if ("EMERGENCY_RISK".equals(riskCategory)) {
             message.append("This reading is outside the normal range and may require urgent medical attention. ");

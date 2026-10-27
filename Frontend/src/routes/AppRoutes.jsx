@@ -67,6 +67,7 @@ import NotificationCenter from '../pages/shared/notifications/NotificationCenter
 import NotificationHistory from '../pages/shared/notifications/NotificationHistory.jsx';
 import ProfilePage from '../pages/shared/ProfilePage.jsx';
 import SettingsPage from '../pages/shared/SettingsPage.jsx';
+import QRCodePage from '../pages/shared/QRCodePage.jsx';
 import NotFound from '../pages/shared/NotFound.jsx';
 import EmptyDashboardState from '../pages/system/EmptyDashboardState.jsx';
 import LoadingFullScreen from '../pages/system/LoadingFullScreen.jsx';
@@ -832,6 +833,7 @@ function AppRoutes() {
         />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="feedback-qr" element={<QRCodePage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

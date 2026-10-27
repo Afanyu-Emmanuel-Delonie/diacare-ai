@@ -22,3 +22,13 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+
+# Local-only assets not meant for the repo
+form-qr-code.png
+
+# Python / ml-service
+ml-service/.venv/
+ml-service/__pycache__/
+ml-service/**/__pycache__/
+ml-service/model/*.joblib
+ml-service/model/*.pkl

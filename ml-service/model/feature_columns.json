@@ -1,0 +1,1 @@
+["current_reading", "recent_mean", "recent_std", "recent_min", "recent_max", "recent_pct_abnormal", "medication_adherence_missed", "hba1c_result", "hour_of_day", "is_night", "delta_from_recent_mean"]
