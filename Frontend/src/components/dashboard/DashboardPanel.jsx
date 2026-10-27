@@ -3,7 +3,7 @@ import { MdArrowForward } from 'react-icons/md';
 
 function DashboardPanel({ title, description, action, to, children, className = '' }) {
   return (
-    <section className={`rounded-xl border border-[#E2E8F0] bg-white p-5 ${className}`}>
+    <section className={`rounded-2xl border border-[#F1F5F9] bg-white p-5 shadow-sm shadow-slate-200/50 sm:p-6 ${className}`}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-[#1E293B]">{title}</h2>

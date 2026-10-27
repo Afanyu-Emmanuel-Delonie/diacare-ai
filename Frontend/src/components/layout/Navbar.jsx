@@ -107,7 +107,7 @@ function ProfileDropdown({ user, userRole, onLogout }) {
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#DC2626] hover:bg-[#fef2f2]"
+            className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-[#fef2f2]"
           >
             <MdLogout size={16} />
             Sign out
@@ -166,7 +166,7 @@ function Navbar({ onMobileMenuClick, onCollapseClick, collapsed }) {
           <input
             type="search"
             placeholder="Search..."
-            className="h-9 w-48 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] pl-9 pr-3 text-sm text-[#0f172a] placeholder:text-[#94a3b8] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition lg:w-60"
+            className="h-9 w-48 rounded-full border border-[#e2e8f0] bg-[#f8fafc] pl-9 pr-3 text-sm text-[#0f172a] placeholder:text-[#94a3b8] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition lg:w-60"
           />
         </div>
 

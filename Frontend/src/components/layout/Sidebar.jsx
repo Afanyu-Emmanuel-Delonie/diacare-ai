@@ -234,7 +234,7 @@ function Sidebar({ onNavigate, collapsed = false }) {
   };
 
   return (
-    <aside className={`flex h-full flex-col bg-[#1e3a5f] transition-all duration-200 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <aside className={`flex h-full flex-col bg-[#002147] transition-all duration-200 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Logo */}
       <div className={`flex h-16 shrink-0 items-center border-b border-white/10 ${collapsed ? 'justify-center px-0' : 'gap-3 px-5'}`}>
         <Logo showName={false} size={32} />

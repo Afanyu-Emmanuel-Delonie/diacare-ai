@@ -4,17 +4,16 @@ import {
   MdDescription,
   MdLocalHospital,
   MdManageAccounts,
-  MdMedicalServices,
   MdPeople,
   MdPeopleAlt,
   MdSecurity,
   MdSettings,
-  MdVolunteerActivism,
 } from 'react-icons/md';
 import DashboardPanel from '../../components/dashboard/DashboardPanel.jsx';
 import DashboardQuickAction from '../../components/dashboard/DashboardQuickAction.jsx';
 import DashboardSkeleton from '../../components/dashboard/DashboardSkeleton.jsx';
 import DashboardStatCell from '../../components/dashboard/DashboardStatCell.jsx';
+import DonutChart from '../../components/common/DonutChart.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import MiniChart from '../../components/common/MiniChart.jsx';
 import { getDashboardData } from '../../services/dashboardService.js';
@@ -22,7 +21,7 @@ import { dashboardCollection, dashboardValue, displayDashboardDate } from '../..
 
 const EMPTY_DATA = {
   stats: {},
-  userSignupTrend: [],
+  systemActivityTrend: [],
   recentSystemActivity: [],
   sections: {},
 };
@@ -44,13 +43,19 @@ function AdminDashboard() {
     return () => { active = false; };
   }, []);
 
-  const trend = dashboardCollection(data, 'userSignupTrend');
+  const trend = dashboardCollection(data, 'systemActivityTrend');
   const activity = dashboardCollection(data, 'recentSystemActivity');
+  const composition = [
+    { label: 'Patients', value: Number(dashboardValue(data, 'totalPatients')) || 0, color: '#0EA5E9' },
+    { label: 'Doctors', value: Number(dashboardValue(data, 'totalDoctors')) || 0, color: '#16A34A' },
+    { label: 'Nurses', value: Number(dashboardValue(data, 'totalNurses')) || 0, color: '#F59E0B' },
+    { label: 'Caregivers', value: Number(dashboardValue(data, 'totalCaregivers')) || 0, color: '#7C3AED' },
+  ].filter((entry) => entry.value > 0);
 
   if (status === 'loading') {
     return (
       <div className="space-y-5">
-        <div className="h-14 max-w-sm animate-pulse rounded-xl bg-[#E2E8F0]" />
+        <div className="h-14 max-w-sm animate-pulse rounded-2xl bg-[#E2E8F0]" />
         <DashboardSkeleton />
       </div>
     );
@@ -58,37 +63,38 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-col gap-4 border-b border-[#E2E8F0] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#2563EB]">Admin workspace</p>
-          <h1 className="mt-1 text-2xl font-bold text-[#1E293B]">System Overview</h1>
+          <h1 className="mt-1 text-2xl font-bold text-[#0F172A]">System Overview</h1>
           <p className="mt-1 text-sm text-[#64748B]">Users, patients, and system activity at a glance.</p>
         </div>
         <Link
           to="/dashboard/admin/users"
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-4 text-sm font-semibold text-white hover:bg-[#1D4ED8]"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[#2563EB] px-5 text-sm font-semibold text-white shadow-sm shadow-blue-200 transition-colors hover:bg-[#1D4ED8]"
         >
           <MdManageAccounts size={18} /> Manage users
         </Link>
       </header>
 
       {status === 'error' && (
-        <div className="rounded-xl border border-[#DC2626]/20 bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+        <div className="rounded-2xl border border-[#DC2626]/20 bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
           Live dashboard data could not be loaded. Some values may be unavailable.
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <DashboardStatCell icon={MdPeople} label="Total Users" value={dashboardValue(data, 'totalUsers')} helper="Registered system accounts" color="#2563EB" />
-        <DashboardStatCell icon={MdPeopleAlt} label="Total Patients" value={dashboardValue(data, 'totalPatients')} helper="Patient profiles in care" color="#0EA5E9" />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <DashboardStatCell icon={MdPeople} label="Total Users" value={dashboardValue(data, 'totalUsers')} helper="Registered accounts" color="#2563EB" bold />
+        <DashboardStatCell icon={MdPeopleAlt} label="Total Patients" value={dashboardValue(data, 'totalPatients')} helper="In active care" color="#0EA5E9" />
         <DashboardStatCell icon={MdLocalHospital} label="Total Doctors" value={dashboardValue(data, 'totalDoctors')} helper="Doctor accounts" color="#16A34A" />
-        <DashboardStatCell icon={MdMedicalServices} label="Total Nurses" value={dashboardValue(data, 'totalNurses')} helper="Nurse accounts" color="#F59E0B" />
-        <DashboardStatCell icon={MdVolunteerActivism} label="Total Caregivers" value={dashboardValue(data, 'totalCaregivers')} helper="Caregiver accounts" color="#7C3AED" />
-        <DashboardStatCell icon={MdDescription} label="Total Reports" value={dashboardValue(data, 'totalReports')} helper="Generated patient reports" color="#64748B" />
+        <DashboardStatCell icon={MdDescription} label="Total Reports" value={dashboardValue(data, 'totalReports')} helper="Generated reports" color="#64748B" />
       </div>
 
-      <section className="grid gap-4 xl:grid-cols-[1fr_1.3fr]">
-        <DashboardPanel title="Recent System Activity" description="New accounts and reports generated in the last 7 days.">
+      <section className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <DashboardPanel title="Activity Trend" description="System activity (new accounts and reports) over the last 7 days.">
+          <MiniChart data={trend} title="Activity" valueSuffix=" events" variant="bar" />
+        </DashboardPanel>
+
+        <DashboardPanel title="Recent System Activity" description="New accounts and reports from the last 7 days.">
           {activity.length ? (
             <div className="divide-y divide-[#F1F5F9]">
               {activity.slice(0, 6).map((item, index) => (
@@ -103,20 +109,25 @@ function AdminDashboard() {
             <EmptyState title="No recent activity" message="New accounts and reports will appear here as they happen." />
           )}
         </DashboardPanel>
-
-        <DashboardPanel title="Account Signups" description="New accounts created over the last 7 days.">
-          <MiniChart data={trend} title="Signups" valueSuffix=" new" />
-        </DashboardPanel>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-[#1E293B]">Quick Actions</h2>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <DashboardQuickAction icon={MdManageAccounts} label="Manage Users" description="Create, edit, deactivate, and review users" to="/dashboard/admin/users" color="#2563EB" />
-          <DashboardQuickAction icon={MdDescription} label="View Reports" description="Open operational and audit reporting" to="/dashboard/reports/admin/system" color="#16A34A" />
-          <DashboardQuickAction icon={MdSecurity} label="Audit Logs" description="Review login, access, and download activity" to="/dashboard/admin/audit-logs" color="#D97706" />
-          <DashboardQuickAction icon={MdSettings} label="System Settings" description="Update report branding and system settings" to="/dashboard/admin/settings" color="#64748B" />
-        </div>
+      <section className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+        <DashboardPanel title="Care Team & Patient Mix" description="Share of registered accounts by role.">
+          {composition.length ? (
+            <DonutChart data={composition} centerLabel="People" />
+          ) : (
+            <EmptyState title="No data yet" message="Role counts will appear here once accounts exist." />
+          )}
+        </DashboardPanel>
+
+        <DashboardPanel title="Quick Actions" description="Common administrator tasks.">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DashboardQuickAction icon={MdManageAccounts} label="Manage Users" description="Create, edit, deactivate, review" to="/dashboard/admin/users" color="#2563EB" />
+            <DashboardQuickAction icon={MdDescription} label="View Reports" description="Operational and audit reporting" to="/dashboard/reports/admin/system" color="#16A34A" />
+            <DashboardQuickAction icon={MdSecurity} label="Audit Logs" description="Login, access, download activity" to="/dashboard/admin/audit-logs" color="#D97706" />
+            <DashboardQuickAction icon={MdSettings} label="System Settings" description="Report branding and settings" to="/dashboard/admin/settings" color="#64748B" />
+          </div>
+        </DashboardPanel>
       </section>
     </div>
   );

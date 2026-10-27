@@ -58,7 +58,7 @@ public class MlRiskPredictionClient {
 
             List<String> signals = response.getTriggeredSignals() != null ? response.getTriggeredSignals() : List.of();
             String alertMessage = RiskPredictionService.buildAlertMessage(response.getRiskCategory(), signals);
-            return Optional.of(new RiskPredictionResult(response.getRiskCategory(), signals, alertMessage));
+            return Optional.of(new RiskPredictionResult(response.getRiskCategory(), signals, alertMessage, "ML_MODEL"));
         } catch (RestClientException ex) {
             log.warn("ML risk-prediction service unavailable, falling back to rule-based classifier: {}", ex.getMessage());
             return Optional.empty();

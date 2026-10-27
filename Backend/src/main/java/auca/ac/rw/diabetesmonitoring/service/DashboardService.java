@@ -427,6 +427,7 @@ public class DashboardService {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("stats", stats);
         data.put("userSignupTrend", buildSignupTrend());
+        data.put("systemActivityTrend", buildSystemActivityTrend(activity));
         data.put("recentSystemActivity", activity.stream().limit(8).toList());
         return data;
     }
@@ -435,6 +436,22 @@ public class DashboardService {
         Map<LocalDate, Long> countsByDay = userRepository.findAll().stream()
                 .filter(u -> u.getCreatedAt() != null)
                 .collect(Collectors.groupingBy(u -> u.getCreatedAt().toLocalDate(), Collectors.counting()));
+
+        List<Map<String, Object>> trend = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = LocalDate.now().minusDays(i);
+            long count = countsByDay.getOrDefault(day, 0L);
+            String label = day.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            trend.add(Map.of("label", label, "value", count));
+        }
+        return trend;
+    }
+
+    /** Daily count of the same new-account + report events shown in recentSystemActivity, not just signups. */
+    private List<Map<String, Object>> buildSystemActivityTrend(List<Map<String, Object>> activity) {
+        Map<LocalDate, Long> countsByDay = activity.stream()
+                .map(event -> LocalDate.parse(String.valueOf(event.get("time")).substring(0, 10)))
+                .collect(Collectors.groupingBy(day -> day, Collectors.counting()));
 
         List<Map<String, Object>> trend = new ArrayList<>();
         for (int i = 6; i >= 0; i--) {

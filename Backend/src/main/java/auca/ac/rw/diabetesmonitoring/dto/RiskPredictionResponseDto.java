@@ -16,6 +16,7 @@ public class RiskPredictionResponseDto {
     private String riskCategory;
     private List<String> triggeredSignals;
     private String alertMessage;
+    private String predictionSource;
     private LocalDateTime createdAt;
 
     public static RiskPredictionResponseDto from(RiskPrediction prediction) {
@@ -28,6 +29,7 @@ public class RiskPredictionResponseDto {
                 ? List.of()
                 : Arrays.asList(prediction.getTriggeredSignals().split("\\|"));
         dto.alertMessage = prediction.getAlertMessage();
+        dto.predictionSource = prediction.getPredictionSource();
         dto.createdAt = prediction.getCreatedAt();
         if (prediction.getPatient() != null) {
             dto.patientId = prediction.getPatient().getId();
@@ -44,5 +46,6 @@ public class RiskPredictionResponseDto {
     public String getRiskCategory() { return riskCategory; }
     public List<String> getTriggeredSignals() { return triggeredSignals; }
     public String getAlertMessage() { return alertMessage; }
+    public String getPredictionSource() { return predictionSource; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

@@ -5,9 +5,9 @@ function DashboardQuickAction({ icon: Icon, label, description, to, color }) {
   return (
     <Link
       to={to}
-      className="group flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4 transition-colors hover:border-[#2563EB]/35 hover:bg-[#F8FAFC]"
+      className="group flex items-center gap-3 rounded-2xl border border-[#F1F5F9] bg-white p-4 shadow-sm shadow-slate-200/40 transition-colors hover:border-[#2563EB]/35 hover:bg-[#F8FAFC]"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{ background: `${color}16`, color }}>
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: `${color}16`, color }}>
         <Icon size={19} />
       </div>
       <div className="min-w-0">

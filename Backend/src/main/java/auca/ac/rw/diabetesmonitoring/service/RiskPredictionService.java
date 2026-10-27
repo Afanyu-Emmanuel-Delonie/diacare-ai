@@ -16,7 +16,7 @@ public class RiskPredictionService {
         List<String> signals = new ArrayList<>();
 
         if (currentReading == null) {
-            return new RiskPredictionResult("LOW_RISK", List.of(), "No glucose reading was provided.");
+            return new RiskPredictionResult("LOW_RISK", List.of(), "No glucose reading was provided.", "RULE_BASED");
         }
 
         boolean hypoglycemia = currentReading < 70;
@@ -54,7 +54,7 @@ public class RiskPredictionService {
         String riskCategory = classifyRisk(currentReading, signals, measuredAt);
         String alertMessage = buildAlertMessage(riskCategory, signals);
 
-        return new RiskPredictionResult(riskCategory, signals, alertMessage);
+        return new RiskPredictionResult(riskCategory, signals, alertMessage, "RULE_BASED");
     }
 
     private String classifyRisk(Double currentReading, List<String> signals, LocalDateTime measuredAt) {

@@ -30,6 +30,9 @@ public class RiskPrediction {
     @Column(length = 1000)
     private String alertMessage;
 
+    /** One of ML_MODEL, RULE_BASED, or SAFETY_FLOOR_OVERRIDE - which path actually produced this prediction. */
+    private String predictionSource;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -54,6 +57,8 @@ public class RiskPrediction {
     public void setTriggeredSignals(String triggeredSignals) { this.triggeredSignals = triggeredSignals; }
     public String getAlertMessage() { return alertMessage; }
     public void setAlertMessage(String alertMessage) { this.alertMessage = alertMessage; }
+    public String getPredictionSource() { return predictionSource; }
+    public void setPredictionSource(String predictionSource) { this.predictionSource = predictionSource; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public Patient getPatient() { return patient; }
     public void setPatient(Patient patient) { this.patient = patient; }

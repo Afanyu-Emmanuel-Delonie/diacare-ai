@@ -12,6 +12,7 @@ import auca.ac.rw.diabetesmonitoring.model.Nurse;
 import auca.ac.rw.diabetesmonitoring.model.Patient;
 import auca.ac.rw.diabetesmonitoring.model.Report;
 import auca.ac.rw.diabetesmonitoring.model.User;
+import auca.ac.rw.diabetesmonitoring.dto.RiskPredictionRequestDto;
 import auca.ac.rw.diabetesmonitoring.repository.AlertRepository;
 import auca.ac.rw.diabetesmonitoring.repository.AppointmentRepository;
 import auca.ac.rw.diabetesmonitoring.repository.CaregiverRepository;
@@ -23,7 +24,9 @@ import auca.ac.rw.diabetesmonitoring.repository.MedicationRepository;
 import auca.ac.rw.diabetesmonitoring.repository.NurseRepository;
 import auca.ac.rw.diabetesmonitoring.repository.PatientRepository;
 import auca.ac.rw.diabetesmonitoring.repository.ReportRepository;
+import auca.ac.rw.diabetesmonitoring.repository.RiskPredictionRepository;
 import auca.ac.rw.diabetesmonitoring.repository.UserRepository;
+import auca.ac.rw.diabetesmonitoring.service.RiskPredictionPersistenceService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -63,6 +66,8 @@ public class DemoDataSeeder implements CommandLineRunner {
     private final MedicalRecordRepository medicalRecordRepository;
     private final MedicationRepository medicationRepository;
     private final ReportRepository reportRepository;
+    private final RiskPredictionRepository riskPredictionRepository;
+    private final RiskPredictionPersistenceService riskPredictionPersistenceService;
     private final PasswordEncoder passwordEncoder;
 
     public DemoDataSeeder(UserRepository userRepository, DoctorRepository doctorRepository,
@@ -71,6 +76,8 @@ public class DemoDataSeeder implements CommandLineRunner {
                            AppointmentRepository appointmentRepository, AlertRepository alertRepository,
                            LabResultRepository labResultRepository, MedicalRecordRepository medicalRecordRepository,
                            MedicationRepository medicationRepository, ReportRepository reportRepository,
+                           RiskPredictionRepository riskPredictionRepository,
+                           RiskPredictionPersistenceService riskPredictionPersistenceService,
                            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.doctorRepository = doctorRepository;
@@ -84,6 +91,8 @@ public class DemoDataSeeder implements CommandLineRunner {
         this.medicalRecordRepository = medicalRecordRepository;
         this.medicationRepository = medicationRepository;
         this.reportRepository = reportRepository;
+        this.riskPredictionRepository = riskPredictionRepository;
+        this.riskPredictionPersistenceService = riskPredictionPersistenceService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -142,6 +151,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                     caregiverIdx >= 0 ? caregivers.get(caregiverIdx) : null);
 
             seedClinicalActivity(patient, assignedDoctor);
+            seedRiskPredictionsIfNeeded(patient);
         }
 
         // The primary demo patient login is linked to the first roster entry.
@@ -161,6 +171,61 @@ public class DemoDataSeeder implements CommandLineRunner {
         seedLabResults(patient);
         seedMedicalRecords(patient, doctor);
         seedReport(patient);
+    }
+
+    /**
+     * Runs each patient's seeded glucose history through the real risk-prediction pipeline
+     * (ML model if the ml-service is reachable, rule-based fallback otherwise) so the risk
+     * dashboards, alerts, and notification pages have real, pipeline-produced data to show -
+     * not hand-written placeholder rows.
+     */
+    private void seedRiskPredictionsIfNeeded(Patient patient) {
+        if (!riskPredictionRepository.findByPatientIdOrderByCreatedAtDesc(patient.getId()).isEmpty()) {
+            return;
+        }
+
+        List<GlucoseReading> readings = glucoseReadingRepository.findByPatientIdOrderByMeasuredAtAsc(patient.getId());
+        if (readings.isEmpty()) {
+            return;
+        }
+
+        boolean medicationAdherenceMissed = medicationRepository.findByPatientId(patient.getId()).stream()
+                .anyMatch(med -> "MISSED".equals(med.getAdherenceStatus()));
+
+        Double hba1cResult = labResultRepository.findByPatientId(patient.getId()).stream()
+                .filter(lab -> "HbA1c".equals(lab.getTestName()))
+                .findFirst()
+                .map(lab -> parseHba1c(lab.getResult()))
+                .orElse(null);
+
+        int windowSize = 5;
+        int predictionPoints = Math.min(8, Math.max(0, readings.size() - windowSize));
+        int startIndex = readings.size() - predictionPoints;
+
+        for (int i = startIndex; i < readings.size(); i++) {
+            GlucoseReading current = readings.get(i);
+            List<Double> recent = readings.subList(Math.max(0, i - windowSize), i).stream()
+                    .map(GlucoseReading::getReading)
+                    .toList();
+
+            RiskPredictionRequestDto request = new RiskPredictionRequestDto();
+            request.setPatientId(patient.getId());
+            request.setCurrentReading(current.getReading());
+            request.setMeasuredAt(current.getMeasuredAt());
+            request.setRecentReadings(recent);
+            request.setMedicationAdherenceMissed(medicationAdherenceMissed);
+            request.setHba1cResult(hba1cResult);
+
+            riskPredictionPersistenceService.create(request);
+        }
+    }
+
+    private Double parseHba1c(String result) {
+        try {
+            return Double.parseDouble(result.replace("%", "").trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private void seedGlucoseReadings(Patient patient, LocalDateTime now) {

@@ -50,6 +50,7 @@ public class RiskPredictionPersistenceService {
         prediction.setRiskCategory(result.getRiskCategory());
         prediction.setTriggeredSignals(String.join("|", result.getTriggeredSignals()));
         prediction.setAlertMessage(result.getAlertMessage());
+        prediction.setPredictionSource(result.getPredictionSource());
 
         if (request.getPatientId() != null) {
             Patient patient = patientRepository.findById(request.getPatientId())
@@ -73,7 +74,7 @@ public class RiskPredictionPersistenceService {
         boolean clinicalEmergency = currentReading < 54 || currentReading > 300;
         if (clinicalEmergency && !"EMERGENCY_RISK".equals(result.getRiskCategory())) {
             String message = RiskPredictionService.buildAlertMessage("EMERGENCY_RISK", result.getTriggeredSignals());
-            return new RiskPredictionResult("EMERGENCY_RISK", result.getTriggeredSignals(), message);
+            return new RiskPredictionResult("EMERGENCY_RISK", result.getTriggeredSignals(), message, "SAFETY_FLOOR_OVERRIDE");
         }
         return result;
     }
